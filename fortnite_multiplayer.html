@@ -7,7 +7,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Bernardonite</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2.6.0">
+    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico?v=2.6.0">
     <script>
         // Purga agressiva de CacheStorage e Service Workers em navegadores mobile
         if ('serviceWorker' in navigator) {
@@ -642,8 +643,17 @@
 
         .btn-spectate:hover { background: #475569; }
 
+        body.in-lobby .team-score-hud,
+        body.in-lobby .top-hud,
+        body.in-lobby #player-status-hud,
+        body.in-lobby #weapon-hud-container,
+        body.in-lobby #reticle,
+        body.in-lobby #mobile-controls-container {
+            display: none !important;
+        }
+
         /* ====================================================
-           LOBBY INICIAL COMPLETO (TIMES, NOMES & MEMÓRIA)
+           LOBBY INICIAL COMPLETO (3 ETAPAS & APRESENTAÇÃO 3D)
            ==================================================== */
         #lobby-screen {
             position: absolute;
@@ -651,57 +661,204 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, #1e293b 0%, #030712 100%);
+            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.40) 0%, rgba(2, 6, 23, 0.76) 100%);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 200;
+            padding: 14px;
+            box-sizing: border-box;
         }
 
         .lobby-box {
-            background: rgba(15, 23, 42, 0.96);
-            border: 3px solid #38bdf8;
-            border-radius: 28px;
-            padding: 32px 42px;
+            background: rgba(15, 23, 42, 0.88);
+            border: 2px solid rgba(56, 189, 248, 0.5);
+            border-radius: 26px;
+            padding: 24px 28px;
             text-align: center;
-            max-width: 580px;
-            width: 92%;
-            box-shadow: 0 0 65px rgba(56, 189, 248, 0.4);
+            max-width: 610px;
+            width: 100%;
+            box-shadow: 0 10px 45px rgba(0, 0, 0, 0.75), 0 0 40px rgba(56, 189, 248, 0.25);
             max-height: 94vh;
             overflow-y: auto;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-sizing: border-box;
+        }
+
+        .lobby-header {
+            margin-bottom: 14px;
         }
 
         .lobby-box h1 {
-            font-size: 32px;
+            font-size: 30px;
             font-weight: 900;
             background: linear-gradient(90deg, #38bdf8, #facc15, #f43f5e);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
+            margin: 0 0 4px 0;
+            letter-spacing: 0.5px;
         }
 
-        .lobby-box p {
+        .lobby-box .lobby-subtitle {
             color: #94a3b8;
-            font-size: 13px;
-            margin-bottom: 18px;
+            font-size: 12.5px;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Indicador de 3 Passos (Wizard Steps) */
+        .lobby-steps-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            margin: 16px 0 18px 0;
+            padding: 5px 8px;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .step-pill {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 30px;
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #94a3b8;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .step-pill:hover {
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .step-pill.active {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
+        }
+
+        .step-pill .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .step-pill.active .step-num {
+            background: #ffffff;
+            color: #0369a1;
+        }
+
+        .step-pill-sep {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 10px;
+        }
+
+        /* Conteúdo dos Passos com Animação Suave */
+        .lobby-step-content {
+            display: none;
+            animation: fadeInStep 0.22s ease-out;
+            text-align: left;
+        }
+
+        .lobby-step-content.active {
+            display: block;
+        }
+
+        @keyframes fadeInStep {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Showcase / Apresentação do Jogo (Passo 1) */
+        .game-showcase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 520px) {
+            .game-showcase-grid { grid-template-columns: 1fr; }
+            .lobby-steps-indicator { gap: 4px; padding: 4px 6px; }
+            .step-pill { font-size: 10.5px; padding: 6px 6px; }
+        }
+
+        .showcase-card {
+            background: rgba(30, 41, 59, 0.65);
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            border-radius: 12px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .showcase-card-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(56, 189, 248, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            margin-top: 2px;
+        }
+
+        .showcase-card-info h5 {
+            margin: 0 0 2px 0;
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+
+        .showcase-card-info p {
+            margin: 0;
+            font-size: 10.5px;
+            color: #94a3b8;
+            line-height: 1.35;
         }
 
         /* Nomes Rápidos em Chips */
         .name-chips-title {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 900;
             color: #facc15;
             text-align: left;
             margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .name-chips-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         .name-chip {
@@ -710,10 +867,13 @@
             border: 2px solid #334155;
             border-radius: 20px;
             padding: 6px 14px;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 800;
             cursor: pointer;
             transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .name-chip:hover {
@@ -729,7 +889,7 @@
         }
 
         .input-group {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             text-align: left;
         }
 
@@ -744,14 +904,15 @@
 
         .input-group input {
             width: 100%;
-            padding: 10px 16px;
+            padding: 10px 14px;
             border-radius: 12px;
             border: 2px solid #334155;
             background: #1e293b;
             color: #fff;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             outline: none;
+            box-sizing: border-box;
             transition: border-color 0.2s;
         }
 
@@ -759,7 +920,7 @@
 
         /* Escolha de Times */
         .teams-selector-container {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             text-align: left;
         }
 
@@ -795,19 +956,19 @@
         }
 
         .team-card-icon { font-size: 26px; }
-        .team-card-info h4 { font-size: 14px; font-weight: 900; }
-        .team-card-info p { font-size: 10px; margin: 0; color: #94a3b8; }
+        .team-card-info h4 { font-size: 13.5px; font-weight: 900; margin: 0 0 2px 0; }
+        .team-card-info p { font-size: 10.5px; margin: 0; color: #94a3b8; }
 
         .skins-picker {
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .skin-opt {
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             cursor: pointer;
             border: 3px solid transparent;
@@ -818,33 +979,123 @@
         .skin-opt.selected { border-color: #fff; transform: scale(1.2); box-shadow: 0 0 20px rgba(255,255,255,0.7); }
 
         .spawn-ground-badge {
-            background: rgba(16, 185, 129, 0.2);
+            background: rgba(16, 185, 129, 0.18);
             border: 1px solid #10b981;
             color: #6ee7b7;
-            padding: 6px 14px;
+            padding: 7px 14px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 800;
-            margin-bottom: 18px;
-            display: inline-block;
+            margin-bottom: 16px;
+            display: block;
+            text-align: center;
+        }
+
+        /* Resumo Tático da Partida (Passo 3) */
+        .battle-summary-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px dashed rgba(56, 189, 248, 0.4);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            text-align: center;
+        }
+
+        .summary-col {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .summary-lbl {
+            font-size: 9.5px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .summary-val {
+            font-size: 12.5px;
+            font-weight: 900;
+            color: #38bdf8;
+        }
+
+        /* Botões do Wizard (Navegação em Passos) */
+        .wizard-footer-nav {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            align-items: center;
+        }
+
+        .wizard-btn-back {
+            flex: 1;
+            padding: 11px 16px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 30px;
+            color: #cbd5e1;
+            font-size: 12.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .wizard-btn-back:hover {
+            background: #334155;
+            color: #fff;
+        }
+
+        .wizard-btn-next {
+            flex: 2;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border: 1px solid #38bdf8;
+            border-radius: 30px;
+            color: #fff;
+            font-size: 13.5px;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+            transition: all 0.2s;
+        }
+
+        .wizard-btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 28px rgba(56, 189, 248, 0.65);
         }
 
         .join-btn {
             background: linear-gradient(135deg, #facc15, #f59e0b);
             color: #0f172a;
-            font-size: 18px;
+            font-size: 16.5px;
             font-weight: 900;
-            padding: 14px 40px;
+            padding: 13px 24px;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 0 35px rgba(245, 158, 11, 0.6);
             transition: all 0.2s;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .join-btn:hover { transform: scale(1.03); box-shadow: 0 0 45px rgba(245, 158, 11, 0.9); }
+        .join-btn:hover { transform: scale(1.02); box-shadow: 0 0 45px rgba(245, 158, 11, 0.9); }
 
         /* HUD Espectador */
         #spectator-hud {
@@ -1296,7 +1547,7 @@
         }
     </style>
 </head>
-<body>
+<body class="in-lobby">
 
     <div id="vignette"></div>
     <div id="crosshair">
@@ -1535,150 +1786,260 @@
     </div>
 
     <!-- ====================================================
-         LOBBY INICIAL COM SISTEMA DE SALAS MULTIPLAYER
+         LOBBY INICIAL COM 3 ETAPAS & APRESENTAÇÃO DO JOGO
          ==================================================== -->
     <div id="lobby-screen">
         <div class="lobby-box">
-            <h1>BERNARDONITE</h1>
-            <p>Bernardo, Família & Amigos — Salas, Times, Gás Tóxico & Granadas!</p>
+            <div class="lobby-header">
+                <h1>BERNARDONITE</h1>
+                <p class="lobby-subtitle">Batalha Tática Multiplayer na Ilha dos Campeões</p>
+            </div>
 
-            <!-- BROWSER DE SALAS MULTIPLAYER -->
-            <div class="rooms-browser-section" style="margin-bottom: 18px; text-align: left;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 11px; font-weight: bold; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="server"></i> Salas Ativas na Ilha:
-                    </span>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" id="btn-force-refresh" title="Forçar limpeza de cache e recarregar a versão mais recente" style="background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; color: #fca5a5; font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                            <i data-lucide="rotate-ccw"></i> Limpar Cache
-                        </button>
-                        <button type="button" id="btn-toggle-create-room" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 5px 12px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="plus-circle"></i> Criar Sala
-                        </button>
+            <!-- NAVEGAÇÃO ENTRE AS 3 ETAPAS (WIZARD INDICATOR) -->
+            <div class="lobby-steps-indicator">
+                <div class="step-pill active" id="step-pill-1" onclick="goToLobbyStep(1)">
+                    <span class="step-num">1</span>
+                    <i data-lucide="server"></i>
+                    <span>Salas & Jogo</span>
+                </div>
+                <span class="step-pill-sep">&bull;</span>
+                <div class="step-pill" id="step-pill-2" onclick="goToLobbyStep(2)">
+                    <span class="step-num">2</span>
+                    <i data-lucide="user"></i>
+                    <span>Guerreiro</span>
+                </div>
+                <span class="step-pill-sep">&bull;</span>
+                <div class="step-pill" id="step-pill-3" onclick="goToLobbyStep(3)">
+                    <span class="step-num">3</span>
+                    <i data-lucide="swords"></i>
+                    <span>Batalha</span>
+                </div>
+            </div>
+
+            <!-- ==============================================
+                 ETAPA 1: APRESENTAÇÃO DO JOGO & ESCOLHA DE SALA
+                 ============================================== -->
+            <div class="lobby-step-content active" id="lobby-step-1">
+                <!-- Apresentação do Jogo -->
+                <div class="game-showcase-grid">
+                    <div class="showcase-card">
+                        <div class="showcase-card-icon"><i data-lucide="crosshair"></i></div>
+                        <div class="showcase-card-info">
+                            <h5>Ilha 3D & Labirinto</h5>
+                            <p>Combate em tempo real com labirinto e baú dourado central.</p>
+                        </div>
+                    </div>
+                    <div class="showcase-card">
+                        <div class="showcase-card-icon"><i data-lucide="biohazard"></i></div>
+                        <div class="showcase-card-info">
+                            <h5>Gás Tóxico Dinâmico</h5>
+                            <p>A névoa tóxica fecha o mapa forçando o confronto final.</p>
+                        </div>
+                    </div>
+                    <div class="showcase-card">
+                        <div class="showcase-card-icon"><i data-lucide="bomb"></i></div>
+                        <div class="showcase-card-info">
+                            <h5>Arsenal & 3 Granadas</h5>
+                            <p>Explosiva HE, Luz Flashbang e Fumaça de camuflagem.</p>
+                        </div>
+                    </div>
+                    <div class="showcase-card">
+                        <div class="showcase-card-icon"><i data-lucide="shield"></i></div>
+                        <div class="showcase-card-info">
+                            <h5>Times E-Sports & Bots</h5>
+                            <p>Time Azul vs Time Vermelho com bots ajustáveis.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Painel de Criação de Sala Personalizada -->
-                <div id="create-room-panel" style="display: none; background: rgba(30, 41, 59, 0.9); border: 2px dashed #38bdf8; border-radius: 14px; padding: 12px; margin-bottom: 10px;">
-                    <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="settings"></i> Configurar Sala Personalizada
-                    </div>
-                    <div style="margin-bottom: 8px;">
-                        <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">NOME DA SALA:</label>
-                        <input type="text" id="new-room-name-input" placeholder="Ex: Sala do Bernardo" maxlength="24" style="width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 13px; font-weight: bold; outline: none;">
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                        <div style="flex: 1;">
-                            <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">QUANTIDADE DE BOTS:</label>
-                            <select id="new-room-bots-select" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 12px; font-weight: bold; outline: none;">
-                                <option value="0">0 (Apenas Jogadores / PvP Puro)</option>
-                                <option value="4">4 Bots (Partida Rápida)</option>
-                                <option value="6" selected>6 Bots (Padrão Equilibrado)</option>
-                                <option value="10">10 Bots (Batalha Intensa)</option>
-                                <option value="16">16 Bots (Guerra Caótica)</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">META DE KILLS:</label>
-                            <select id="new-room-kills-select" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 12px; font-weight: bold; outline: none;">
-                                <option value="15">15 Kills (Rápida)</option>
-                                <option value="25" selected>25 Kills (Padrão)</option>
-                                <option value="50">50 Kills (Batalha Longa)</option>
-                            </select>
+                <!-- BROWSER DE SALAS MULTIPLAYER -->
+                <div class="rooms-browser-section" style="margin-bottom: 14px; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 11px; font-weight: bold; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="server"></i> Salas Ativas na Ilha:
+                        </span>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <button type="button" id="btn-force-refresh" title="Forçar limpeza de cache e recarregar a versão mais recente" style="background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; color: #fca5a5; font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <i data-lucide="rotate-ccw"></i> Limpar Cache
+                            </button>
+                            <button type="button" id="btn-toggle-create-room" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 5px 12px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                <i data-lucide="plus-circle"></i> Criar Sala
+                            </button>
                         </div>
                     </div>
-                    <button type="button" id="btn-submit-create-room" style="width: 100%; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; font-weight: 800; font-size: 13px; padding: 9px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        <i data-lucide="check"></i> Confirmar e Criar Sala
+
+                    <!-- Painel de Criação de Sala Personalizada -->
+                    <div id="create-room-panel" style="display: none; background: rgba(30, 41, 59, 0.9); border: 2px dashed #38bdf8; border-radius: 14px; padding: 12px; margin-bottom: 10px;">
+                        <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="settings"></i> Configurar Sala Personalizada
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">NOME DA SALA:</label>
+                            <input type="text" id="new-room-name-input" placeholder="Ex: Sala do Bernardo" maxlength="24" style="width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 13px; font-weight: bold; outline: none; box-sizing: border-box;">
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">QUANTIDADE DE BOTS:</label>
+                                <select id="new-room-bots-select" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 12px; font-weight: bold; outline: none;">
+                                    <option value="0">0 (Apenas Jogadores / PvP Puro)</option>
+                                    <option value="4">4 Bots (Partida Rápida)</option>
+                                    <option value="6" selected>6 Bots (Padrão Equilibrado)</option>
+                                    <option value="10">10 Bots (Batalha Intensa)</option>
+                                    <option value="16">16 Bots (Guerra Caótica)</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">META DE KILLS:</label>
+                                <select id="new-room-kills-select" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 12px; font-weight: bold; outline: none;">
+                                    <option value="15">15 Kills (Rápida)</option>
+                                    <option value="25" selected>25 Kills (Padrão)</option>
+                                    <option value="50">50 Kills (Batalha Longa)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="button" id="btn-submit-create-room" style="width: 100%; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; font-weight: 800; font-size: 13px; padding: 9px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i data-lucide="check"></i> Confirmar e Criar Sala
+                        </button>
+                    </div>
+
+                    <!-- Lista com Cards de Salas -->
+                    <div id="rooms-list-container" style="display: flex; flex-direction: column; gap: 6px; max-height: 155px; overflow-y: auto;">
+                        <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 12px;">
+                            Carregando salas disponíveis...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wizard-footer-nav">
+                    <button type="button" class="wizard-btn-next" onclick="goToLobbyStep(2)">
+                        <span>Continuar: Escolher Guerreiro</span>
+                        <i data-lucide="arrow-right"></i>
                     </button>
                 </div>
+            </div>
 
-                <!-- Lista com Cards de Salas -->
-                <div id="rooms-list-container" style="display: flex; flex-direction: column; gap: 6px; max-height: 170px; overflow-y: auto;">
-                    <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 12px;">
-                        Carregando salas disponíveis...
+            <!-- ==============================================
+                 ETAPA 2: IDENTIDADE DO GUERREIRO & SKIN
+                 ============================================== -->
+            <div class="lobby-step-content" id="lobby-step-2">
+                <!-- Nomes Rápidos Pré-definidos -->
+                <div class="name-chips-title"><i data-lucide="crown"></i> Nomes Rápidos de Combate:</div>
+                <div class="name-chips-grid">
+                    <div class="name-chip selected" data-name="Bernardo"><i data-lucide="crown"></i> Bernardo</div>
+                    <div class="name-chip" data-name="Diniz"><i data-lucide="zap"></i> Diniz</div>
+                    <div class="name-chip" data-name="João"><i data-lucide="crosshair"></i> João</div>
+                    <div class="name-chip" data-name="Carol"><i data-lucide="sparkles"></i> Carol</div>
+                    <div class="name-chip" data-name="Joãoz"><i data-lucide="flame"></i> Joãoz</div>
+                    <div class="name-chip" data-name="Sophia"><i data-lucide="sparkles"></i> Sophia</div>
+                    <div class="name-chip" data-name="Conrado"><i data-lucide="shield"></i> Conrado</div>
+                </div>
+
+                <!-- Input de Nome Customizado -->
+                <div class="input-group">
+                    <label>Ou Digite seu Nick Customizado:</label>
+                    <input type="text" id="player-name-input" value="Bernardo" maxlength="15" placeholder="Seu nome...">
+                </div>
+
+                <!-- Seletor de Cores de Skin -->
+                <div class="input-group" style="text-align: center;">
+                    <label style="text-align: center;">Cor Tática da Skin / Traje:</label>
+                    <div class="skins-picker" id="skins-container">
+                        <div class="skin-opt selected" style="background: #2563eb;" data-color="#2563eb"></div>
+                        <div class="skin-opt" style="background: #0284c7;" data-color="#0284c7"></div>
+                        <div class="skin-opt" style="background: #0d9488;" data-color="#0d9488"></div>
+                        <div class="skin-opt" style="background: #4f46e5;" data-color="#4f46e5"></div>
+                        <div class="skin-opt" style="background: #eab308;" data-color="#eab308"></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Nomes Rápidos Pré-definidos -->
-            <div class="name-chips-title">Escolha seu nome rápido:</div>
-            <div class="name-chips-grid">
-                <div class="name-chip selected" data-name="Bernardo"><i data-lucide="crown"></i> Bernardo</div>
-                <div class="name-chip" data-name="Diniz"><i data-lucide="zap"></i> Diniz</div>
-                <div class="name-chip" data-name="João"><i data-lucide="crosshair"></i> João</div>
-                <div class="name-chip" data-name="Carol"><i data-lucide="sparkles"></i> Carol</div>
-                <div class="name-chip" data-name="Joãoz"><i data-lucide="flame"></i> Joãoz</div>
-                <div class="name-chip" data-name="Sophia"><i data-lucide="sparkles"></i> Sophia</div>
-                <div class="name-chip" data-name="Conrado"><i data-lucide="shield"></i> Conrado</div>
-            </div>
-
-            <!-- Input de Nome Customizado -->
-            <div class="input-group">
-                <label>Ou Digite seu Nick Customizado:</label>
-                <input type="text" id="player-name-input" value="Bernardo" maxlength="15">
-            </div>
-
-            <!-- Seletor de Quantidade de Bots da Sala Selecionada -->
-            <div class="bot-selector-container" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.7); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="bot"></i> Bots na Batalha:
-                    </span>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" id="btn-bot-minus" style="width: 32px; height: 32px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">-</button>
-                        <span id="bot-count-text" style="font-size: 15px; font-weight: 800; color: #38bdf8; min-width: 55px; text-align: center;">6 Bots</span>
-                        <button type="button" id="btn-bot-plus" style="width: 32px; height: 32px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">+</button>
-                    </div>
-                </div>
-                <div class="bot-chips-grid" style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
-                    <button type="button" class="bot-chip-opt" data-bots="0" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">0 (PvP)</button>
-                    <button type="button" class="bot-chip-opt" data-bots="4" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">4 Bots</button>
-                    <button type="button" class="bot-chip-opt selected" data-bots="6" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #0284c7; border: 1px solid #38bdf8; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer;">6 Bots</button>
-                    <button type="button" class="bot-chip-opt" data-bots="10" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">10 Bots</button>
-                    <button type="button" class="bot-chip-opt" data-bots="16" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">16 (Guerra)</button>
+                <div class="wizard-footer-nav">
+                    <button type="button" class="wizard-btn-back" onclick="goToLobbyStep(1)">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Voltar</span>
+                    </button>
+                    <button type="button" class="wizard-btn-next" onclick="goToLobbyStep(3)">
+                        <span>Continuar: Time & Batalha</span>
+                        <i data-lucide="arrow-right"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Escolha de Times (Azul x Vermelho) -->
-            <div class="teams-selector-container">
-                <label style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Escolha seu Time de Batalha:</label>
-                <div class="teams-grid">
-                    <div class="team-card-opt blue selected" id="opt-team-blue" data-team="blue">
-                        <div class="team-card-icon"><i data-lucide="shield" style="color: #38bdf8; width: 28px; height: 28px;"></i></div>
-                        <div class="team-card-info">
-                            <h4 style="color: #38bdf8;">TIME AZUL</h4>
-                            <p>Base Noroeste</p>
+            <!-- ==============================================
+                 ETAPA 3: TIME, BOTS & ENTRADA NA BATALHA
+                 ============================================== -->
+            <div class="lobby-step-content" id="lobby-step-3">
+                <!-- Escolha de Times (Azul x Vermelho) -->
+                <div class="teams-selector-container">
+                    <label style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Escolha seu Time de Batalha:</label>
+                    <div class="teams-grid">
+                        <div class="team-card-opt blue selected" id="opt-team-blue" data-team="blue">
+                            <div class="team-card-icon"><i data-lucide="shield" style="color: #38bdf8; width: 26px; height: 26px;"></i></div>
+                            <div class="team-card-info">
+                                <h4 style="color: #38bdf8;">TIME AZUL</h4>
+                                <p>Base Noroeste</p>
+                            </div>
+                        </div>
+                        <div class="team-card-opt red" id="opt-team-red" data-team="red">
+                            <div class="team-card-icon"><i data-lucide="shield" style="color: #ef4444; width: 26px; height: 26px;"></i></div>
+                            <div class="team-card-info">
+                                <h4 style="color: #f87171;">TIME VERMELHO</h4>
+                                <p>Base Sudeste</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="team-card-opt red" id="opt-team-red" data-team="red">
-                        <div class="team-card-icon"><i data-lucide="shield" style="color: #ef4444; width: 28px; height: 28px;"></i></div>
-                        <div class="team-card-info">
-                            <h4 style="color: #f87171;">TIME VERMELHO</h4>
-                            <p>Base Sudeste</p>
+                </div>
+
+                <!-- Seletor de Quantidade de Bots da Sala Selecionada -->
+                <div class="bot-selector-container" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.7); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="bot"></i> Bots na Batalha:
+                        </span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button type="button" id="btn-bot-minus" style="width: 30px; height: 30px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">-</button>
+                            <span id="bot-count-text" style="font-size: 14px; font-weight: 800; color: #38bdf8; min-width: 55px; text-align: center;">6 Bots</span>
+                            <button type="button" id="btn-bot-plus" style="width: 30px; height: 30px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">+</button>
                         </div>
                     </div>
+                    <div class="bot-chips-grid" style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                        <button type="button" class="bot-chip-opt" data-bots="0" style="flex: 1; min-width: 48px; padding: 6px 4px; font-size: 10.5px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">0 (PvP)</button>
+                        <button type="button" class="bot-chip-opt" data-bots="4" style="flex: 1; min-width: 48px; padding: 6px 4px; font-size: 10.5px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">4 Bots</button>
+                        <button type="button" class="bot-chip-opt selected" data-bots="6" style="flex: 1; min-width: 48px; padding: 6px 4px; font-size: 10.5px; background: #0284c7; border: 1px solid #38bdf8; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer;">6 Bots</button>
+                        <button type="button" class="bot-chip-opt" data-bots="10" style="flex: 1; min-width: 48px; padding: 6px 4px; font-size: 10.5px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">10 Bots</button>
+                        <button type="button" class="bot-chip-opt" data-bots="16" style="flex: 1; min-width: 48px; padding: 6px 4px; font-size: 10.5px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">16 (Guerra)</button>
+                    </div>
+                </div>
+
+                <!-- Resumo Tático da Partida -->
+                <div class="battle-summary-card">
+                    <div class="summary-col">
+                        <span class="summary-lbl">Sala</span>
+                        <span class="summary-val" id="summary-room-val">Oficial</span>
+                    </div>
+                    <div class="summary-col">
+                        <span class="summary-lbl">Guerreiro</span>
+                        <span class="summary-val" id="summary-player-val">Bernardo</span>
+                    </div>
+                    <div class="summary-col">
+                        <span class="summary-lbl">Time</span>
+                        <span class="summary-val" id="summary-team-val" style="color: #38bdf8;">Azul</span>
+                    </div>
+                </div>
+
+                <div class="spawn-ground-badge">
+                    <i data-lucide="map-pin"></i> <b>Início direto no chão</b> na base do seu time (sem espera de queda)!
+                </div>
+
+                <div class="wizard-footer-nav">
+                    <button type="button" class="wizard-btn-back" onclick="goToLobbyStep(2)">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Voltar</span>
+                    </button>
+                    <button class="join-btn" id="join-game-btn" style="flex: 2;">
+                        <i data-lucide="swords"></i> ENTRAR NA BATALHA!
+                    </button>
                 </div>
             </div>
-
-            <!-- Seletor de Cores de Skin -->
-            <div class="input-group">
-                <label>Cor Tática da Skin:</label>
-                <div class="skins-picker" id="skins-container">
-                    <div class="skin-opt selected" style="background: #2563eb;" data-color="#2563eb"></div>
-                    <div class="skin-opt" style="background: #0284c7;" data-color="#0284c7"></div>
-                    <div class="skin-opt" style="background: #0d9488;" data-color="#0d9488"></div>
-                    <div class="skin-opt" style="background: #4f46e5;" data-color="#4f46e5"></div>
-                    <div class="skin-opt" style="background: #eab308;" data-color="#eab308"></div>
-                </div>
-            </div>
-
-            <div class="spawn-ground-badge">
-                <i data-lucide="map-pin"></i> <b>Início direto no chão</b> na base do seu time (sem espera de queda)!
-            </div>
-
-            <button class="join-btn" id="join-game-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <i data-lucide="swords"></i> ENTRAR NA BATALHA!
-            </button>
         </div>
     </div>
 
@@ -1713,10 +2074,10 @@
 
     <canvas id="viewport"></canvas>
 
-    <script src="js/three.min.js?v=2.5.2"></script>
+    <script src="js/three.min.js?v=2.6.0"></script>
 
     <script>
-        const CLIENT_BUILD_VERSION = '2.5.2';
+        const CLIENT_BUILD_VERSION = '2.6.0';
 
         // ==========================================
         // HELPER PARA ÍCONES SVG DINÂMICOS (LUCIDE)
@@ -3074,12 +3435,14 @@
 
                 card.addEventListener('click', () => {
                     selectedRoomId = r.id;
-                    updateBotCountUI(r.botCount);
+                    if (typeof updateBotCountUI === 'function') updateBotCountUI(r.botCount);
                     renderRoomsList(availableRooms);
+                    if (typeof updateLobbySummary === 'function') updateLobbySummary();
                 });
 
                 container.appendChild(card);
             });
+            if (typeof updateLobbySummary === 'function') updateLobbySummary();
             refreshIcons();
         }
 
@@ -4067,16 +4430,73 @@
         let playerVelY = 0;
         const keys = {};
 
+        // ==========================================
+        // SISTEMA DO WIZARD DO LOBBY (3 ETAPAS)
+        // ==========================================
+        let currentLobbyStep = 1;
+
+        function updateLobbySummary() {
+            const nameInput = document.getElementById('player-name-input');
+            if (nameInput && nameInput.value.trim()) {
+                myName = nameInput.value.trim();
+            }
+            const sPlayer = document.getElementById('summary-player-val');
+            if (sPlayer) sPlayer.innerText = myName || 'Bernardo';
+
+            const sRoom = document.getElementById('summary-room-val');
+            if (sRoom) {
+                const activeRoomObj = availableRooms.find(r => r.id === selectedRoomId);
+                sRoom.innerText = activeRoomObj ? activeRoomObj.name : 'Oficial';
+            }
+
+            const sTeam = document.getElementById('summary-team-val');
+            if (sTeam) {
+                sTeam.innerText = (myTeam === 'red') ? 'Vermelho' : 'Azul';
+                sTeam.style.color = (myTeam === 'red') ? '#f87171' : '#38bdf8';
+            }
+        }
+
+        window.goToLobbyStep = function(step) {
+            currentLobbyStep = Math.max(1, Math.min(3, step));
+            const nameInput = document.getElementById('player-name-input');
+            if (nameInput && nameInput.value.trim()) {
+                myName = nameInput.value.trim();
+            }
+
+            for (let i = 1; i <= 3; i++) {
+                const sEl = document.getElementById(`lobby-step-${i}`);
+                const pEl = document.getElementById(`step-pill-${i}`);
+                if (sEl) sEl.classList.toggle('active', i === currentLobbyStep);
+                if (pEl) pEl.classList.toggle('active', i === currentLobbyStep);
+            }
+
+            updateLobbySummary();
+            refreshIcons();
+        };
+
         // Seleção de Chips de Nomes Rápidos
         document.querySelectorAll('.name-chip').forEach(chip => {
             chip.addEventListener('click', () => {
                 document.querySelectorAll('.name-chip').forEach(c => c.classList.remove('selected'));
                 chip.classList.add('selected');
                 const name = chip.getAttribute('data-name');
-                document.getElementById('player-name-input').value = name;
+                const nInput = document.getElementById('player-name-input');
+                if (nInput) nInput.value = name;
                 myName = name;
+                updateLobbySummary();
             });
         });
+
+        const playerNameInputEl = document.getElementById('player-name-input');
+        if (playerNameInputEl) {
+            playerNameInputEl.addEventListener('input', () => {
+                myName = playerNameInputEl.value.trim() || 'Bernardo';
+                document.querySelectorAll('.name-chip').forEach(c => {
+                    c.classList.toggle('selected', c.getAttribute('data-name') === myName);
+                });
+                updateLobbySummary();
+            });
+        }
 
         // Seleção de Times no Lobby
         function updateSkinsForTeam(team) {
@@ -4099,6 +4519,7 @@
                 skinsBox.appendChild(opt);
             });
             mySkin = colors[0];
+            updateLobbySummary();
         }
 
         const teamBlueOpt = document.getElementById('opt-team-blue');
@@ -4109,6 +4530,7 @@
             teamRedOpt.classList.remove('selected');
             myTeam = 'blue';
             updateSkinsForTeam('blue');
+            updateLobbySummary();
         });
 
         teamRedOpt.addEventListener('click', () => {
@@ -4116,6 +4538,7 @@
             teamBlueOpt.classList.remove('selected');
             myTeam = 'red';
             updateSkinsForTeam('red');
+            updateLobbySummary();
         });
 
         // Carrega preferências salvas no localStorage
@@ -5056,6 +5479,20 @@
                         }
                     }
                 }
+
+            // ==========================================
+            // APRESENTAÇÃO 3D DA ILHA NO LOBBY (CINEMATIC ORBIT)
+            // ==========================================
+            const lobbyScreenEl = document.getElementById('lobby-screen');
+            const isLobbyActive = (lobbyScreenEl && lobbyScreenEl.style.display !== 'none');
+            if (isLobbyActive || !localPlayer) {
+                const lobbyTime = now * 0.00014;
+                const camOrbitDist = 76;
+                camera.position.x = Math.sin(lobbyTime) * camOrbitDist;
+                camera.position.z = Math.cos(lobbyTime) * camOrbitDist;
+                camera.position.y = 28 + Math.sin(now * 0.00035) * 4;
+                camera.lookAt(0, 4, 0);
+            }
 
             // Sincronização visual da fumaça / névoa tóxica (esfumaçado orgânico e móvel)
             currentStormRadius = THREE.MathUtils.lerp(currentStormRadius, targetStormRadius, 0.08);

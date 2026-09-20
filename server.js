@@ -57,7 +57,7 @@ const server = http.createServer((req, res) => {
     });
 });
 
-const SERVER_BUILD_VERSION = '2.5.2';
+const SERVER_BUILD_VERSION = '2.6.0';
 
 const wss = new WebSocketServer({ server });
 
