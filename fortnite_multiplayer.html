@@ -264,6 +264,16 @@
             letter-spacing: 0.5px;
         }
 
+        /* HUD Superior Esquerdo (Ações: Sair & Renascer) */
+        .top-left-hud {
+            position: absolute;
+            top: 20px;
+            left: 25px;
+            display: flex;
+            gap: 10px;
+            z-index: 55;
+        }
+
         /* HUD Superior Direito */
         .top-hud {
             position: absolute;
@@ -299,6 +309,29 @@
         .btn-respawn-action:hover {
             transform: scale(1.05);
             box-shadow: 0 0 20px rgba(250, 204, 21, 0.8);
+        }
+
+        .btn-leave-action {
+            cursor: pointer;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(185, 28, 28, 0.45)) !important;
+            border-color: #ef4444 !important;
+            color: #fca5a5 !important;
+            transition: all 0.15s ease;
+            font-weight: 800;
+        }
+
+        .btn-leave-action:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            border-color: #f87171 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+        }
+
+        .btn-leave-mobile {
+            background: rgba(239, 68, 68, 0.35) !important;
+            border: 2px solid #ef4444 !important;
+            color: #fca5a5 !important;
         }
 
         /* HUD Status Vida / Escudo */
@@ -645,6 +678,7 @@
 
         body.in-lobby .team-score-hud,
         body.in-lobby .top-hud,
+        body.in-lobby .top-left-hud,
         body.in-lobby #player-status-hud,
         body.in-lobby #weapon-hud-container,
         body.in-lobby #reticle,
@@ -1591,11 +1625,18 @@
         <div class="target-subtext">META DA RODADA: 25 ELIMINAÇÕES</div>
     </div>
 
-    <!-- HUD SUPERIOR DIREITO -->
-    <div class="top-hud">
-        <button id="btn-top-respawn" class="stat-badge btn-respawn-action" title="Renascer seu personagem no chão da base do seu time">
+    <!-- HUD SUPERIOR ESQUERDO (AÇÕES: SAIR & RENASCER) -->
+    <div class="top-left-hud">
+        <button id="btn-top-leave" class="stat-badge btn-leave-action" title="Sair da partida e voltar ao Lobby (Esc)">
+            <i data-lucide="log-out"></i> SAIR
+        </button>
+        <button id="btn-top-respawn" class="stat-badge btn-respawn-action" title="Renascer seu personagem no chão da base do seu time (R)">
             <i data-lucide="rotate-ccw"></i> RENASCER (SOLO)
         </button>
+    </div>
+
+    <!-- HUD SUPERIOR DIREITO (ESTATÍSTICAS DA PARTIDA) -->
+    <div class="top-hud">
         <div class="stat-badge kills" style="border-color: #facc15;">
             <i data-lucide="crosshair" style="color: #facc15;"></i> KILLS: <span id="kills-count" style="color: #facc15;">0</span>
         </div>
@@ -1770,7 +1811,10 @@
         <div class="victory-card">
             <h1 id="victory-title">#1 VICTORY ROYALE!</h1>
             <p id="victory-subtitle"><i data-lucide="crown"></i> SEU TIME É O GRANDE CAMPEÃO! <i data-lucide="trophy"></i></p>
-            <button class="btn-action-gold" id="btn-victory-restart" style="display: inline-flex; align-items: center; gap: 8px;"><i data-lucide="rotate-ccw"></i> RENASCER NA ILHA (SOLO)</button>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
+                <button class="btn-action-gold" id="btn-victory-restart" style="display: inline-flex; align-items: center; gap: 8px;"><i data-lucide="rotate-ccw"></i> RENASCER NA ILHA (SOLO)</button>
+                <button class="btn-leave-action" id="btn-victory-leave" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; font-weight: 800; border-radius: 12px;"><i data-lucide="log-out"></i> SAIR P/ O LOBBY</button>
+            </div>
         </div>
     </div>
 
@@ -1782,6 +1826,7 @@
             <div class="elim-btns">
                 <button class="btn-restart-round" id="btn-elim-restart" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="rotate-ccw"></i> RENASCER NO CHÃO (APENAS EU)</button>
                 <button class="btn-spectate" id="btn-elim-spectate" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="eye"></i> MODO ESPECTADOR (VOAR LIVRE)</button>
+                <button class="btn-leave-action" id="btn-elim-leave" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 12px; width: 100%;"><i data-lucide="log-out"></i> SAIR DA PARTIDA (VOLTAR AO LOBBY)</button>
             </div>
         </div>
     </div>
@@ -1897,6 +1942,15 @@
                                     <option value="50">50 Kills (Batalha Longa)</option>
                                 </select>
                             </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">CENÁRIO DA BATALHA:</label>
+                            <select id="new-room-map-select" style="width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid #38bdf8; border-radius: 8px; color: #38bdf8; font-size: 12px; font-weight: 800; outline: none;">
+                                <option value="island" selected>🌴 Ilha dos Campeões (Labirinto & Baú Dourado)</option>
+                                <option value="chernobyl">☢️ Chernobyl Radioativo (Poças de Dano & Reator)</option>
+                                <option value="space_station">🚀 Estação Espacial Orbital (Complexo Tech & Planeta)</option>
+                                <option value="random">🎲 Cenário Aleatório (Procedural)</option>
+                            </select>
                         </div>
                         <button type="button" id="btn-submit-create-room" style="width: 100%; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; font-weight: 800; font-size: 13px; padding: 9px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                             <i data-lucide="check"></i> Confirmar e Criar Sala
@@ -2018,6 +2072,10 @@
                         <span class="summary-val" id="summary-room-val">Oficial</span>
                     </div>
                     <div class="summary-col">
+                        <span class="summary-lbl">Cenário</span>
+                        <span class="summary-val" id="summary-map-val" style="color: #facc15;">🌴 Ilha</span>
+                    </div>
+                    <div class="summary-col">
                         <span class="summary-lbl">Guerreiro</span>
                         <span class="summary-val" id="summary-player-val">Bernardo</span>
                     </div>
@@ -2058,11 +2116,12 @@
         <!-- Botão de Sprint (Ergonômico acima do Joystick) -->
         <button id="btn-mobile-sprint" title="Correr / Disparar"><i data-lucide="footprints"></i></button>
 
-        <!-- Barra Superior Direita Mobile (Tela Cheia + Câmera + Renascer) -->
+        <!-- Barra Superior Direita Mobile (Tela Cheia + Câmera + Renascer + Sair) -->
         <div id="mobile-top-bar">
             <button id="btn-mobile-fullscreen" class="mobile-top-btn" title="Tela Cheia"><i data-lucide="maximize" id="fs-icon"></i></button>
             <button id="btn-mobile-cam" class="mobile-top-btn" title="Alternar Câmera (1ª / 3ª Pessoa)"><i data-lucide="camera"></i></button>
             <button id="btn-mobile-respawn" class="mobile-top-btn" title="Renascer no chão"><i data-lucide="rotate-ccw"></i></button>
+            <button id="btn-mobile-leave" class="mobile-top-btn btn-leave-mobile" title="Sair da Partida"><i data-lucide="log-out"></i></button>
         </div>
 
         <!-- Botões de Ação Mobile Limpos e Não Sobrepostos -->
@@ -2076,11 +2135,12 @@
 
     <canvas id="viewport"></canvas>
 
-    <script src="js/three.min.js?v=2.6.3"></script>
+    <script src="js/three.min.js?v=2.7.0"></script>
+    <script src="js/scenarios.js?v=2.7.0"></script>
 
     <script>
         // Versão da build do cliente para invalidação de cache
-        const CLIENT_BUILD_VERSION = '2.6.3';
+        const CLIENT_BUILD_VERSION = '2.7.0';
 
         // ==========================================
         // HELPER PARA ÍCONES SVG DINÂMICOS (LUCIDE)
@@ -2500,6 +2560,11 @@
         ocean.position.y = -2.6;
         ocean.receiveShadow = true;
         scene.add(ocean);
+
+        // Inicializa o Sistema de Cenários Modulares (Chernobyl, Estação Espacial, Ilha)
+        if (window.ScenarioManager) {
+            window.ScenarioManager.init(scene, renderer, camera);
+        }
 
         // ==========================================
         // SISTEMA ATMOSFÉRICO DE FUMAÇA / GÁS TÓXICO (ESFUMAÇADO & MÓVEL)
@@ -3415,6 +3480,20 @@
 
             rooms.forEach(r => {
                 const isSelected = (r.id === selectedRoomId);
+                const mapKey = r.map || 'island';
+                let mapBadge = '🌴 Ilha Clássica';
+                let mapIcon = 'trees';
+                let mapColor = '#10b981';
+                if (mapKey === 'chernobyl') {
+                    mapBadge = '☢️ Chernobyl';
+                    mapIcon = 'biohazard';
+                    mapColor = '#84cc16';
+                } else if (mapKey === 'space_station') {
+                    mapBadge = '🚀 Estação Espacial';
+                    mapIcon = 'rocket';
+                    mapColor = '#38bdf8';
+                }
+
                 const card = document.createElement('div');
                 card.className = `room-card-item ${isSelected ? 'selected-room' : ''}`;
                 card.setAttribute('data-room-id', r.id);
@@ -3425,6 +3504,7 @@
                             <span>${r.name}</span>
                         </div>
                         <div class="room-card-meta">
+                            <span style="color:${mapColor};font-weight:700;"><i data-lucide="${mapIcon}" style="width:1em;height:1em;"></i> ${mapBadge}</span>
                             <span><i data-lucide="users" style="width:1em;height:1em;"></i> ${r.playerCount} Jogadores</span>
                             <span><i data-lucide="bot" style="width:1em;height:1em;"></i> ${r.botCount} Bots</span>
                             <span><i data-lucide="crosshair" style="width:1em;height:1em;"></i> Meta ${r.targetKills}</span>
@@ -3443,6 +3523,9 @@
                     if (typeof updateBotCountUI === 'function') updateBotCountUI(r.botCount);
                     renderRoomsList(availableRooms);
                     if (typeof updateLobbySummary === 'function') updateLobbySummary();
+                    if (window.ScenarioManager) {
+                        window.ScenarioManager.loadScenario(mapKey, island, ocean, sun, hemiLight);
+                    }
                 });
 
                 container.appendChild(card);
@@ -3526,6 +3609,13 @@
                     if (data.player && localPlayer) {
                         localPlayer.position.set(data.player.x, data.player.y, data.player.z);
                     }
+                    if (data.map && window.ScenarioManager) {
+                        window.ScenarioManager.loadScenario(data.map, island, ocean, sun, hemiLight);
+                    }
+                }
+
+                if (data.type === 'left_room_success') {
+                    console.log('Saiu da sala com sucesso no servidor.');
                 }
 
                 if (data.type === 'player_joined') {
@@ -3775,7 +3865,7 @@
         });
 
         function buildStructure(type) {
-            if (!localStats.isAlive) return;
+            if (!localPlayer || !localStats.isAlive) return;
             if (localStats.wood < 10) {
                 showToast('<i data-lucide="alert-triangle"></i> Madeira insuficiente! Bata nas árvores com a picareta.');
                 return;
@@ -4467,6 +4557,16 @@
                 sTeam.innerText = (myTeam === 'red') ? 'Vermelho' : 'Azul';
                 sTeam.style.color = (myTeam === 'red') ? '#f87171' : '#38bdf8';
             }
+
+            const sMap = document.getElementById('summary-map-val');
+            if (sMap) {
+                const activeRoomObj = availableRooms.find(r => r.id === selectedRoomId);
+                const mapKey = activeRoomObj ? activeRoomObj.map : 'island';
+                let mapLabel = '🌴 Ilha Clássica';
+                if (mapKey === 'chernobyl') mapLabel = '☢️ Chernobyl Radioativo';
+                else if (mapKey === 'space_station') mapLabel = '🚀 Estação Espacial';
+                sMap.innerText = mapLabel;
+            }
         }
 
         window.goToLobbyStep = function(step) {
@@ -4663,13 +4763,16 @@
                 const name = (document.getElementById('new-room-name-input').value || '').trim() || 'Minha Sala';
                 const botCount = parseInt(document.getElementById('new-room-bots-select').value, 10);
                 const targetKills = parseInt(document.getElementById('new-room-kills-select').value, 10);
+                const mapSelect = document.getElementById('new-room-map-select');
+                const selectedMap = mapSelect ? mapSelect.value : 'island';
 
                 if (ws && ws.readyState === 1) {
                     ws.send(JSON.stringify({
                         type: 'create_room',
                         name: name,
                         botCount: botCount,
-                        targetKills: targetKills
+                        targetKills: targetKills,
+                        map: selectedMap
                     }));
                 }
             });
@@ -4847,11 +4950,91 @@
     document.getElementById('btn-victory-restart').addEventListener('click', requestRespawnSolo);
     document.getElementById('btn-elim-restart').addEventListener('click', requestRespawnSolo);
 
-        const btnSpecRespawn = document.getElementById('btn-spectator-respawn');
-        if (btnSpecRespawn) btnSpecRespawn.addEventListener('click', requestRespawnSolo);
+    const btnSpecRespawn = document.getElementById('btn-spectator-respawn');
+    if (btnSpecRespawn) btnSpecRespawn.addEventListener('click', requestRespawnSolo);
 
-        const btnTopRespawn = document.getElementById('btn-top-respawn');
-        if (btnTopRespawn) btnTopRespawn.addEventListener('click', requestRespawnSolo);
+    const btnTopRespawn = document.getElementById('btn-top-respawn');
+    if (btnTopRespawn) btnTopRespawn.addEventListener('click', requestRespawnSolo);
+
+    // ==========================================
+    // SAIR DA PARTIDA E RETORNAR AO LOBBY
+    // ==========================================
+    function leaveMatchAndReturnToLobby() {
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'leave_room' }));
+            ws.send(JSON.stringify({ type: 'get_rooms' }));
+        }
+
+        // Destrava o mouse imediatamente
+        if (document.exitPointerLock) {
+            try { document.exitPointerLock(); } catch(e) {}
+        }
+
+        // Fecha telas de fim de jogo
+        const elimScreen = document.getElementById('eliminated-screen');
+        if (elimScreen) elimScreen.style.display = 'none';
+        const vicScreen = document.getElementById('victory-screen');
+        if (vicScreen) vicScreen.style.display = 'none';
+        const specHud = document.getElementById('spectator-hud');
+        if (specHud) specHud.style.display = 'none';
+
+        // Remove jogador local do Three.js
+        if (localPlayer) {
+            scene.remove(localPlayer);
+            localPlayer = null;
+        }
+
+        // Limpa jogadores remotos
+        remotePlayers.forEach(rp => scene.remove(rp));
+        remotePlayers.clear();
+
+        // Limpa construções locais
+        if (typeof clearAllBuilds === 'function') {
+            clearAllBuilds();
+        }
+
+        // Reseta atributos locais
+        localStats.health = 100;
+        localStats.shield = 100;
+        localStats.kills = 0;
+        localStats.deaths = 0;
+        localStats.isAlive = true;
+        localStats.isSpectating = false;
+        updateHUD();
+
+        // Restaura a exibição do Lobby (Etapa 1)
+        document.body.classList.add('in-lobby');
+        const lobbyScreen = document.getElementById('lobby-screen');
+        if (lobbyScreen) lobbyScreen.style.display = 'flex';
+        if (typeof window.goToLobbyStep === 'function') {
+            window.goToLobbyStep(1);
+        }
+
+        const mobContainer = document.getElementById('mobile-controls-container');
+        if (mobContainer) mobContainer.classList.remove('active-game');
+
+        showToast('<i data-lucide="log-out"></i> Você saiu da partida e voltou ao Lobby.');
+        refreshIcons();
+    }
+
+    const btnTopLeave = document.getElementById('btn-top-leave');
+    if (btnTopLeave) btnTopLeave.addEventListener('click', leaveMatchAndReturnToLobby);
+
+    const btnMobLeave = document.getElementById('btn-mobile-leave');
+    if (btnMobLeave) {
+        btnMobLeave.addEventListener('click', leaveMatchAndReturnToLobby);
+        btnMobLeave.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            leaveMatchAndReturnToLobby();
+        }, { passive: false });
+    }
+
+    const btnVicLeave = document.getElementById('btn-victory-leave');
+    if (btnVicLeave) btnVicLeave.addEventListener('click', leaveMatchAndReturnToLobby);
+
+    const btnElimLeave = document.getElementById('btn-elim-leave');
+    if (btnElimLeave) btnElimLeave.addEventListener('click', leaveMatchAndReturnToLobby);
 
         // MODO ESPECTADOR FLUIDO E SEM LAG
         document.getElementById('btn-elim-spectate').addEventListener('click', () => {
@@ -5096,6 +5279,13 @@
             if (e.code === 'Tab') {
                 e.preventDefault();
                 toggleLeaderboard(true);
+            }
+            if (e.code === 'Escape') {
+                const lobbyEl = document.getElementById('lobby-screen');
+                if (!lobbyEl || lobbyEl.style.display === 'none') {
+                    leaveMatchAndReturnToLobby();
+                    return;
+                }
             }
             if (e.code === 'KeyR' && (!localStats.isAlive || localStats.isSpectating)) {
                 requestRespawnSolo();
@@ -5589,6 +5779,46 @@
                     }
                 }
             });
+
+            // Atualização de Animações e Perigos do Cenário Atual (ex: Radiação de Chernobyl, Reator Quântico)
+            if (window.ScenarioManager) {
+                window.ScenarioManager.update(dt, (localPlayer && localStats.isAlive) ? localPlayer.position : null, (hazardInfo) => {
+                    if (localStats.isAlive) {
+                        const dmg = hazardInfo.damage || 5;
+                        localStats.health = Math.max(0, localStats.health - dmg);
+                        updateHUD();
+                        if (localPlayer) {
+                            spawnDamageNumber(localPlayer.position.x, localPlayer.position.y + 1.8, localPlayer.position.z, Math.round(dmg), false, false);
+                        }
+                        if (ws && ws.readyState === 1) {
+                            ws.send(JSON.stringify({
+                                type: 'hazard_damage',
+                                damage: dmg,
+                                hazard: hazardInfo.source || 'radiation'
+                            }));
+                        }
+                        if (localStats.health <= 0) {
+                            localStats.isAlive = false;
+                            localStats.deaths++;
+                            updateHUD();
+                            document.getElementById('deaths-count').innerText = localStats.deaths;
+                            if (localPlayer) {
+                                localPlayer.visible = false;
+                                spawnEliminationParticles(localPlayer.position.x, localPlayer.position.y, localPlayer.position.z);
+                            }
+                            const killerDisplay = document.getElementById('killer-name-display');
+                            if (killerDisplay) {
+                                killerDisplay.innerHTML = `<i data-lucide="biohazard" style="color:#a3e635;"></i> Eliminado por Radiação Nuclear (Chernobyl)`;
+                            }
+                            refreshIcons();
+                            document.getElementById('eliminated-screen').style.display = 'flex';
+                            if (document.exitPointerLock) {
+                                try { document.exitPointerLock(); } catch(e) {}
+                            }
+                        }
+                    }
+                });
+            }
 
             renderer.render(scene, camera);
         }

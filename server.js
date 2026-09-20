@@ -57,7 +57,7 @@ const server = http.createServer((req, res) => {
     });
 });
 
-const SERVER_BUILD_VERSION = '2.6.3';
+const SERVER_BUILD_VERSION = '2.7.0';
 
 const wss = new WebSocketServer({ server });
 
@@ -209,6 +209,7 @@ class GameRoom {
         this.isDefault = !!options.isDefault;
         this.targetBotCount = Math.max(0, Math.min(16, options.botCount !== undefined ? options.botCount : 6));
         this.targetKills = options.targetKills || 25;
+        this.map = options.map || 'island';
         this.createdAt = Date.now();
 
         this.players = new Map(); // id => player
@@ -343,6 +344,7 @@ class GameRoom {
         return {
             id: this.id,
             name: this.name,
+            map: this.map || 'island',
             isDefault: this.isDefault,
             playerCount: this.getHumanPlayerCount(),
             maxPlayers: 16,
@@ -956,10 +958,12 @@ class GameRoom {
 // ==========================================
 const rooms = new Map();
 
-// Inicializa salas padrões permanentes
-rooms.set('room_oficial', new GameRoom('room_oficial', 'Ilha Oficial (Bernardonite)', { botCount: 6, targetKills: 25, isDefault: true }));
-rooms.set('room_caos', new GameRoom('room_caos', 'Guerra Total (16 Bots)', { botCount: 16, targetKills: 25, isDefault: true }));
-rooms.set('room_x1', new GameRoom('room_x1', 'Duelo X1 Sem Bots', { botCount: 0, targetKills: 15, isDefault: true }));
+// Inicializa salas padrões permanentes com os cenários temáticos
+rooms.set('room_oficial', new GameRoom('room_oficial', 'Ilha Oficial (Bernardonite)', { botCount: 6, targetKills: 25, map: 'island', isDefault: true }));
+rooms.set('room_chernobyl', new GameRoom('room_chernobyl', 'Chernobyl Radioativo (10 Bots)', { botCount: 10, targetKills: 25, map: 'chernobyl', isDefault: true }));
+rooms.set('room_espacial', new GameRoom('room_espacial', 'Estação Espacial Orbital (8 Bots)', { botCount: 8, targetKills: 25, map: 'space_station', isDefault: true }));
+rooms.set('room_caos', new GameRoom('room_caos', 'Guerra Total em Chernobyl (16 Bots)', { botCount: 16, targetKills: 35, map: 'chernobyl', isDefault: true }));
+rooms.set('room_x1', new GameRoom('room_x1', 'Duelo X1 na Estação Espacial', { botCount: 0, targetKills: 15, map: 'space_station', isDefault: true }));
 
 function getRoomList() {
     const list = [];
@@ -1036,14 +1040,23 @@ wss.on('connection', (ws) => {
                 const botCount = Math.max(0, Math.min(16, parseInt(data.botCount, 10) || 6));
                 const targetKills = Math.max(5, Math.min(100, parseInt(data.targetKills, 10) || 25));
 
+                const validMaps = ['island', 'chernobyl', 'space_station'];
+                let chosenMap = data.map || 'island';
+                if (chosenMap === 'random') {
+                    chosenMap = validMaps[Math.floor(Math.random() * validMaps.length)];
+                } else if (!validMaps.includes(chosenMap)) {
+                    chosenMap = 'island';
+                }
+
                 const newRoom = new GameRoom(roomId, cleanName, {
                     botCount: botCount,
                     targetKills: targetKills,
+                    map: chosenMap,
                     isDefault: false
                 });
                 rooms.set(roomId, newRoom);
 
-                console.log(`🏠 [SALA CRIADA] "${cleanName}" (${roomId}) | Bots: ${botCount} | Meta: ${targetKills}`);
+                console.log(`🏠 [SALA CRIADA] "${cleanName}" (${roomId}) | Mapa: ${chosenMap} | Bots: ${botCount} | Meta: ${targetKills}`);
 
                 ws.send(JSON.stringify({
                     type: 'room_created',
@@ -1052,6 +1065,31 @@ wss.on('connection', (ws) => {
                 }));
 
                 broadcastRoomListToLobby();
+            }
+
+            // ==========================================
+            // SAIR DA PARTIDA / VOLTAR AO LOBBY
+            // ==========================================
+            if (data.type === 'leave_room') {
+                if (currentRoom && myPlayer) {
+                    currentRoom.players.delete(playerId);
+                    currentRoom.broadcast({
+                        type: 'player_left',
+                        id: playerId,
+                        name: myPlayer.name,
+                        aliveCount: currentRoom.getAliveCount(),
+                        teamScores: currentRoom.teamScores,
+                        players: currentRoom.getPlayerList()
+                    });
+                    console.log(`[-] ${myPlayer.name} saiu da sala "${currentRoom.name}" e voltou ao Lobby.`);
+                    currentRoom = null;
+                    myPlayer = null;
+                    ws.currentRoomId = null;
+                    broadcastRoomListToLobby();
+                    ws.send(JSON.stringify({
+                        type: 'left_room_success'
+                    }));
+                }
             }
 
             // ==========================================
@@ -1110,6 +1148,7 @@ wss.on('connection', (ws) => {
                     id: playerId,
                     roomId: room.id,
                     roomName: room.name,
+                    map: room.map || 'island',
                     player: {
                         id: myPlayer.id,
                         name: myPlayer.name,
@@ -1248,6 +1287,55 @@ wss.on('connection', (ws) => {
                     attackerId: playerId,
                     attackerName: myPlayer.name
                 });
+            }
+
+            // ==========================================
+            // DANO POR PERIGOS AMBIENTAIS (RADIAÇÃO / CHERNOBYL)
+            // ==========================================
+            if (data.type === 'hazard_damage') {
+                if (!myPlayer.isAlive) return;
+                const dmg = data.damage || 5;
+                if (myPlayer.shield > 0) {
+                    const sDmg = Math.min(myPlayer.shield, dmg);
+                    myPlayer.shield -= sDmg;
+                } else {
+                    myPlayer.hp = Math.max(0, myPlayer.hp - dmg);
+                }
+
+                currentRoom.broadcast({
+                    type: 'player_damaged',
+                    targetId: myPlayer.id,
+                    attackerId: 'RADIAÇÃO',
+                    attackerName: 'Poça Radioativa',
+                    attackerTeam: 'chernobyl',
+                    targetName: myPlayer.name,
+                    targetTeam: myPlayer.team,
+                    shield: myPlayer.shield,
+                    hp: myPlayer.hp,
+                    damage: dmg,
+                    isHeadshot: false,
+                    weapon: 'radiation'
+                });
+
+                if (myPlayer.hp <= 0) {
+                    myPlayer.hp = 0;
+                    myPlayer.shield = 0;
+                    myPlayer.isAlive = false;
+                    myPlayer.deaths = (myPlayer.deaths || 0) + 1;
+
+                    currentRoom.broadcast({
+                        type: 'player_eliminated',
+                        victimId: myPlayer.id,
+                        victimName: myPlayer.name,
+                        victimTeam: myPlayer.team,
+                        killerId: 'RADIAÇÃO',
+                        killerName: 'Poça Radioativa',
+                        killerTeam: 'chernobyl',
+                        weapon: 'radiation',
+                        aliveCount: currentRoom.getAliveCount(),
+                        teamScores: currentRoom.teamScores
+                    });
+                }
             }
 
             // ==========================================
