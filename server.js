@@ -57,7 +57,7 @@ const server = http.createServer((req, res) => {
     });
 });
 
-const SERVER_BUILD_VERSION = '2.6.0';
+const SERVER_BUILD_VERSION = '2.6.3';
 
 const wss = new WebSocketServer({ server });
 
@@ -242,18 +242,52 @@ class GameRoom {
     }
 
     getGroundSpawnForTeam(team) {
-        let pt;
-        if (team === 'red') {
-            pt = RED_SPAWNS[this.redSpawnIdx % RED_SPAWNS.length];
-            this.redSpawnIdx++;
-        } else {
-            pt = BLUE_SPAWNS[this.blueSpawnIdx % BLUE_SPAWNS.length];
-            this.blueSpawnIdx++;
+        const storm = this.stormState || { x: 0, z: 0, radius: 135 };
+        // Margem de segurança de 10 metros para dentro do raio seguro da tempestade
+        const safeRadius = Math.max(6, (storm.radius || 135) - 10);
+        const stormX = storm.x || 0;
+        const stormZ = storm.z || 0;
+
+        // 1. Tentar os pontos fixos da base do time que estejam comprovadamente fora do gás tóxico
+        const teamSpawns = (team === 'red') ? RED_SPAWNS : BLUE_SPAWNS;
+        const validBaseSpawns = teamSpawns.filter(pt => {
+            const dist = Math.hypot(pt.x - stormX, pt.z - stormZ);
+            return dist < safeRadius;
+        });
+
+        if (validBaseSpawns.length > 0) {
+            const idx = (team === 'red') ? (this.redSpawnIdx++ % validBaseSpawns.length) : (this.blueSpawnIdx++ % validBaseSpawns.length);
+            const pt = validBaseSpawns[idx];
+            for (let i = 0; i < 8; i++) {
+                const ox = (Math.random() - 0.5) * 5;
+                const oz = (Math.random() - 0.5) * 5;
+                const x = pt.x + ox;
+                const z = pt.z + oz;
+                if (Math.hypot(x - stormX, z - stormZ) < safeRadius && !checkWallCollisionWithBuilds(x, z, 0.7, this.worldBuilds)) {
+                    const y = getGroundHeight(x, z);
+                    return { x, y, z };
+                }
+            }
+            return { x: pt.x, y: getGroundHeight(pt.x, pt.z), z: pt.z };
         }
-        const x = pt.x + (Math.random() - 0.5) * 6;
-        const z = pt.z + (Math.random() - 0.5) * 6;
-        const y = getGroundHeight(x, z);
-        return { x, y, z };
+
+        // 2. Se a base do time já foi tomada pelo gás tóxico, gera spawn OBRIGATORIAMENTE DENTRO DA SAFE ZONE
+        // Polarizado ligeiramente para o quadrante do time (Vermelho: +X,+Z / Azul: -X,-Z)
+        const teamAngle = (team === 'red') ? Math.PI * 0.25 : -Math.PI * 0.75;
+        for (let i = 0; i < 35; i++) {
+            const angle = teamAngle + (Math.random() - 0.5) * Math.PI * 0.85;
+            const r = Math.random() * Math.max(2, safeRadius * 0.75);
+            const x = stormX + Math.cos(angle) * r;
+            const z = stormZ + Math.sin(angle) * r;
+            const islandDist = Math.hypot(x, z);
+            if (islandDist < 85 && !checkWallCollisionWithBuilds(x, z, 0.7, this.worldBuilds)) {
+                const y = getGroundHeight(x, z);
+                return { x, y, z };
+            }
+        }
+
+        // Fallback garantido no centro seguro da tempestade
+        return { x: stormX, y: getGroundHeight(stormX, stormZ), z: stormZ };
     }
 
     broadcast(msg, excludeWs = null) {

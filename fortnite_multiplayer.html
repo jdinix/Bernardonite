@@ -7,8 +7,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Bernardonite</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2.6.0">
-    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico?v=2.6.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2.6.3">
+    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico?v=2.6.3">
     <script>
         // Purga agressiva de CacheStorage e Service Workers em navegadores mobile
         if ('serviceWorker' in navigator) {
@@ -648,6 +648,7 @@
         body.in-lobby #player-status-hud,
         body.in-lobby #weapon-hud-container,
         body.in-lobby #reticle,
+        body.in-lobby #crosshair,
         body.in-lobby #mobile-controls-container {
             display: none !important;
         }
@@ -1448,8 +1449,8 @@
             box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
         }
 
-        /* Suporte Mobile e Telas Menores */
-        @media (max-width: 900px), (pointer: coarse) {
+        /* Suporte Mobile e Telas Menores (Smartphone e Tablet Estreito) */
+        @media (max-width: 900px) {
             #mobile-controls-container.active-game {
                 display: block !important;
             }
@@ -2057,10 +2058,11 @@
         <!-- Botão de Sprint (Ergonômico acima do Joystick) -->
         <button id="btn-mobile-sprint" title="Correr / Disparar"><i data-lucide="footprints"></i></button>
 
-        <!-- Barra Superior Direita Mobile (Tela Cheia + Câmera) -->
+        <!-- Barra Superior Direita Mobile (Tela Cheia + Câmera + Renascer) -->
         <div id="mobile-top-bar">
             <button id="btn-mobile-fullscreen" class="mobile-top-btn" title="Tela Cheia"><i data-lucide="maximize" id="fs-icon"></i></button>
             <button id="btn-mobile-cam" class="mobile-top-btn" title="Alternar Câmera (1ª / 3ª Pessoa)"><i data-lucide="camera"></i></button>
+            <button id="btn-mobile-respawn" class="mobile-top-btn" title="Renascer no chão"><i data-lucide="rotate-ccw"></i></button>
         </div>
 
         <!-- Botões de Ação Mobile Limpos e Não Sobrepostos -->
@@ -2074,10 +2076,11 @@
 
     <canvas id="viewport"></canvas>
 
-    <script src="js/three.min.js?v=2.6.0"></script>
+    <script src="js/three.min.js?v=2.6.3"></script>
 
     <script>
-        const CLIENT_BUILD_VERSION = '2.6.0';
+        // Versão da build do cliente para invalidação de cache
+        const CLIENT_BUILD_VERSION = '2.6.3';
 
         // ==========================================
         // HELPER PARA ÍCONES SVG DINÂMICOS (LUCIDE)
@@ -2958,8 +2961,9 @@
             });
             const bootMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.7, metalness: 0.2 });
 
+
             // ----------------------------------------------------
-            // 1. TRONCO E COLETE BALÍSTICO ANATÔMICO
+            // 1. TRONCO E COLETE BALÍSTICO ANATÔMICO (FRENTE EM -Z, COSTAS EM +Z)
             // ----------------------------------------------------
             // Fardamento base do tronco
             const torsoBase = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.28, 0.72, 10), uniformMat);
@@ -2967,57 +2971,57 @@
             torsoBase.castShadow = true;
             bodyMeshGroup.add(torsoBase);
 
-            // Placa peitoral de Kevlar com Molle
+            // Placa peitoral de Kevlar com Molle (na frente do peito: -Z)
             const vestChest = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.48, 0.44), vestMat);
-            vestChest.position.set(0, 1.48, 0.02);
+            vestChest.position.set(0, 1.48, -0.02);
             vestChest.castShadow = true;
             bodyMeshGroup.add(vestChest);
 
-            // Emblema luminoso do Time no peito
+            // Emblema luminoso do Time no peito (frente: -Z)
             const chestBadge = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.05), teamLedMat);
-            chestBadge.position.set(0, 1.55, 0.24);
+            chestBadge.position.set(0, 1.55, -0.24);
             bodyMeshGroup.add(chestBadge);
 
-            // Bolsos táticos de munição na barriga
+            // Bolsos táticos de munição na barriga (frente: -Z)
             [-0.18, 0, 0.18].forEach(px => {
                 const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.08), armorMat);
-                pouch.position.set(px, 1.32, 0.22);
+                pouch.position.set(px, 1.32, -0.22);
                 bodyMeshGroup.add(pouch);
             });
 
-            // Rádio tático com antena nas costas/ombro
+            // Rádio tático com antena nas costas/ombro (atrás: +Z)
             const radio = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 0.1), armorMat);
-            radio.position.set(-0.25, 1.62, -0.22);
+            radio.position.set(-0.25, 1.62, 0.22);
             const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.35, 6), armorMat);
-            antenna.position.set(-0.25, 1.84, -0.22);
+            antenna.position.set(-0.25, 1.84, 0.22);
             bodyMeshGroup.add(radio, antenna);
 
             // Cinto tático com fivela e coldre lateral
             const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.12, 10), armorMat);
             belt.position.y = 1.05;
             const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.09, 0.06), teamLedMat);
-            buckle.position.set(0, 1.05, 0.32);
+            buckle.position.set(0, 1.05, -0.32);
             const sideHolster = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.22, 0.12), armorMat);
-            sideHolster.position.set(0.34, 0.98, 0.05);
+            sideHolster.position.set(0.34, 0.98, -0.05);
             bodyMeshGroup.add(belt, buckle, sideHolster);
 
-            // Mochila de Assalto Tática
+            // Mochila de Assalto Tática (nas costas: +Z, visível pelo jogador em 3ª pessoa)
             const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.52, 0.26), armorMat);
-            backpack.position.set(0, 1.42, -0.32);
+            backpack.position.set(0, 1.42, 0.32);
             backpack.castShadow = true;
             const bpStripe = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.04), teamLedMat);
-            bpStripe.position.set(0, 1.46, -0.46);
+            bpStripe.position.set(0, 1.46, 0.46);
             bodyMeshGroup.add(backpack, bpStripe);
 
             // ----------------------------------------------------
             // 2. CABEÇA, CAPACETE BALÍSTICO E VISEIRA TÁTICA
             // ----------------------------------------------------
             const headGroup = new THREE.Group();
-            headGroup.position.set(0, 1.84, 0);
+            headGroup.position.set(0, 1.72, 0);
 
-            // Pescoço com balaclava
-            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.22, 10), uniformMat);
-            neck.position.y = 0.08;
+            // Pescoço com balaclava conectando perfeitamente ao tronco
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.28, 10), uniformMat);
+            neck.position.y = 0.04;
             headGroup.add(neck);
 
             // Rosto Humanoide
@@ -3050,18 +3054,18 @@
             earR.position.set(0.24, 0.26, 0);
             const micBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.18, 6), armorMat);
             micBoom.rotation.set(0, 0, -Math.PI / 3);
-            micBoom.position.set(0.24, 0.2, 0.12);
+            micBoom.position.set(0.24, 0.2, -0.12);
             headGroup.add(earL, earR, micBoom);
 
             // Lanterna tática montada no trilho direito do capacete
             const tacLight = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 8), armorMat);
             tacLight.rotation.x = Math.PI / 2;
-            tacLight.position.set(0.25, 0.36, 0.12);
+            tacLight.position.set(0.25, 0.36, -0.12);
             headGroup.add(tacLight);
 
-            // Viseira Tática Espelhada com Cor do Time
+            // Viseira Tática Espelhada com Cor do Time (frente: -Z)
             const visor = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.14, 0.16), visorMat);
-            visor.position.set(0, 0.26, 0.18);
+            visor.position.set(0, 0.26, -0.18);
             headGroup.add(visor);
 
             bodyMeshGroup.add(headGroup);
@@ -3079,7 +3083,7 @@
                 bodyMeshGroup.add(pauldron);
             });
 
-            // Braço Esquerdo
+            // Braço Esquerdo (Apoia a arma na frente)
             const leftArmGroup = new THREE.Group();
             leftArmGroup.position.set(-0.46, 1.55, 0);
             const lBicep = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.4, 8), uniformMat);
@@ -3089,12 +3093,12 @@
             const lForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.38, 8), uniformMat);
             lForearm.position.y = -0.56;
             const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.14), armorMat);
-            lHand.position.set(0.15, -0.68, 0.35); // Apoia a arma
+            lHand.position.set(0.15, -0.68, -0.35); // Apoia a arma na frente (-Z)
             leftArmGroup.add(lBicep, lElbow, lForearm, lHand);
-            leftArmGroup.rotation.x = -Math.PI / 6;
+            leftArmGroup.rotation.x = Math.PI / 6;
             bodyMeshGroup.add(leftArmGroup);
 
-            // Braço Direito (Empunha a arma)
+            // Braço Direito (Empunha a arma apontada para a frente)
             const rightArmGroup = new THREE.Group();
             rightArmGroup.position.set(0.46, 1.55, 0);
             const rBicep = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.4, 8), uniformMat);
@@ -3104,14 +3108,15 @@
             const rForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.38, 8), uniformMat);
             rForearm.position.y = -0.56;
             const rGlove = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.14), armorMat);
-            rGlove.position.set(0, -0.74, 0.15);
+            rGlove.position.set(0, -0.74, -0.15);
             rightArmGroup.add(rBicep, rElbow, rForearm, rGlove);
-            rightArmGroup.rotation.x = -Math.PI / 3.8;
+            rightArmGroup.rotation.x = Math.PI / 3.8;
             bodyMeshGroup.add(rightArmGroup);
 
-            // Suporte da Arma na Mão Direita
+            // Suporte da Arma na Mão Direita (apontada para -Z)
             const weaponHolder = new THREE.Group();
-            weaponHolder.position.set(0.38, 1.25, 0.45);
+            weaponHolder.position.set(0.38, 1.25, -0.45);
+            weaponHolder.rotation.y = Math.PI; // Inverte para o cano apontar para frente (-Z)
             bodyMeshGroup.add(weaponHolder);
 
             // Cria arma inicial (SCAR Dourada - slot 2)
@@ -3127,7 +3132,7 @@
             }
 
             // ----------------------------------------------------
-            // 4. PERNAS, JOELHEIRAS TÁTICAS E COTURNOS
+            // 4. PERNAS, JOELHEIRAS TÁTICAS E COTURNOS (PONTAS PARA FRENTE EM -Z)
             // ----------------------------------------------------
             // Perna Esquerda
             const leftLegGroup = new THREE.Group();
@@ -3135,11 +3140,11 @@
             const lThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.48, 8), uniformMat);
             lThigh.position.y = -0.22;
             const lKnee = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.16, 0.15), armorMat);
-            lKnee.position.set(0, -0.46, 0.06);
+            lKnee.position.set(0, -0.46, -0.06);
             const lShin = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.42, 8), uniformMat);
             lShin.position.y = -0.68;
             const lBoot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.22, 0.34), bootMat);
-            lBoot.position.set(0, -0.9, 0.06);
+            lBoot.position.set(0, -0.9, -0.06);
             leftLegGroup.add(lThigh, lKnee, lShin, lBoot);
             bodyMeshGroup.add(leftLegGroup);
 
@@ -3149,11 +3154,11 @@
             const rThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.48, 8), uniformMat);
             rThigh.position.y = -0.22;
             const rKnee = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.16, 0.15), armorMat);
-            rKnee.position.set(0, -0.46, 0.06);
+            rKnee.position.set(0, -0.46, -0.06);
             const rShin = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.42, 8), uniformMat);
             rShin.position.y = -0.68;
             const rBoot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.22, 0.34), bootMat);
-            rBoot.position.set(0, -0.9, 0.06);
+            rBoot.position.set(0, -0.9, -0.06);
             rightLegGroup.add(rThigh, rKnee, rShin, rBoot);
             bodyMeshGroup.add(rightLegGroup);
 
@@ -3517,6 +3522,9 @@
                     }
                     if (data.botCount !== undefined) {
                         updateBotCountUI(data.botCount);
+                    }
+                    if (data.player && localPlayer) {
+                        localPlayer.position.set(data.player.x, data.player.y, data.player.z);
                     }
                 }
 
@@ -4185,7 +4193,12 @@
                     .add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(0.45))
                     .add(new THREE.Vector3(0.12, -0.12, 0));
             }
-            return localPlayer.position.clone().add(new THREE.Vector3(0.4, 1.3, 0.5));
+            const camDir = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+            const camRight = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
+            return localPlayer.position.clone()
+                .add(new THREE.Vector3(0, 1.30, 0))
+                .add(camRight.clone().multiplyScalar(0.38))
+                .add(camDir.clone().multiplyScalar(0.75));
         }
 
         // Fuzil SCAR e Heavy Sniper via Raycast
@@ -4746,70 +4759,93 @@
                 myTeamPill.style.color = '#bae6fd';
             }
 
-            // Spawn direto no chão na base do seu time
-            const spawnX = (myTeam === 'red') ? 48 : -48;
-            const spawnZ = (myTeam === 'red') ? 48 : -48;
-            const spawnY = getGroundHeight(spawnX, spawnZ);
+        // Cálculo de spawn no cliente garantido fora do gás tóxico
+        function getSafeSpawnClient(team) {
+            const safeR = Math.max(6, (currentStormRadius || 135) - 10);
+            const baseX = (team === 'red') ? 48 : -48;
+            const baseZ = (team === 'red') ? 48 : -48;
+            const distToBase = Math.hypot(baseX - currentStormX, baseZ - currentStormZ);
+            if (distToBase < safeR) {
+                return { x: baseX, z: baseZ };
+            }
+            // Se a base do time já foi tomada pelo gás tóxico, gera spawn dentro da zona segura
+            const teamAngle = (team === 'red') ? Math.PI * 0.25 : -Math.PI * 0.75;
+            const angle = teamAngle + (Math.random() - 0.5) * 0.75;
+            const r = Math.random() * Math.max(2, safeR * 0.75);
+            return {
+                x: currentStormX + Math.cos(angle) * r,
+                z: currentStormZ + Math.sin(angle) * r
+            };
+        }
 
-            if (localPlayer) scene.remove(localPlayer);
-            localPlayer = createPlayerMesh(mySkin, myName, true, myTeam);
-            localPlayer.position.set(spawnX, spawnY, spawnZ);
-            localPlayer.userData.glider.visible = false;
-            isGliding = false;
+        // Spawn direto no chão na base do seu time (garantido fora do gás tóxico)
+        const safeSpawn = getSafeSpawnClient(myTeam);
+        const spawnX = safeSpawn.x;
+        const spawnZ = safeSpawn.z;
+        const spawnY = getGroundHeight(spawnX, spawnZ);
+
+        if (localPlayer) scene.remove(localPlayer);
+        localPlayer = createPlayerMesh(mySkin, myName, true, myTeam);
+        localPlayer.position.set(spawnX, spawnY, spawnZ);
+        localPlayer.userData.glider.visible = false;
+        isGliding = false;
+        isGrounded = true;
+        scene.add(localPlayer);
+
+        // Exibe imediatamente todos os botões e HUDs do jogo retirando a classe in-lobby
+        document.body.classList.remove('in-lobby');
+        document.getElementById('lobby-screen').style.display = 'none';
+
+        const mobContainer = document.getElementById('mobile-controls-container');
+        if (mobContainer) mobContainer.classList.add('active-game');
+
+        connectWebSocket();
+        if (!isTouchDevice) {
+            try { canvas.requestPointerLock(); } catch(e){}
+        }
+        showToast(`<i data-lucide="swords"></i> Batalha iniciada! Você está no Time [${myTeam.toUpperCase()}] no chão.`);
+    });
+
+    // REINICIAR A ILHA APENAS PARA O USUÁRIO (RESPAWN SOLO NO CHÃO FORA DO GÁS)
+    function requestRespawnSolo() {
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'respawn' }));
+        }
+        const safeSpawn = getSafeSpawnClient(myTeam);
+        resetLocalPlayerSolo(safeSpawn.x, safeSpawn.z);
+    }
+
+    function resetLocalPlayerSolo(spawnX, spawnZ) {
+        document.body.classList.remove('in-lobby');
+        localStats.health = 100;
+        localStats.shield = 100;
+        localStats.isAlive = true;
+        localStats.isSpectating = false;
+
+        document.getElementById('player-status-hud').style.display = 'flex';
+        document.getElementById('weapon-hud-container').style.display = 'flex';
+        document.getElementById('spectator-hud').style.display = 'none';
+        document.getElementById('eliminated-screen').style.display = 'none';
+        document.getElementById('victory-screen').style.display = 'none';
+
+        if (localPlayer) {
+            localPlayer.visible = true;
+            const groundY = getGroundHeight(spawnX, spawnZ);
+            localPlayer.position.set(spawnX, groundY, spawnZ);
+            isGliding = false; // Começa do chão!
+            playerVelY = 0;
             isGrounded = true;
-            scene.add(localPlayer);
-
-            document.getElementById('lobby-screen').style.display = 'none';
-            const mobContainer = document.getElementById('mobile-controls-container');
-            if (mobContainer) mobContainer.classList.add('active-game');
-
-            connectWebSocket();
-            if (!isTouchDevice) {
-                try { canvas.requestPointerLock(); } catch(e){}
-            }
-            showToast(`<i data-lucide="swords"></i> Batalha iniciada! Você está no Time [${myTeam.toUpperCase()}] no chão.`);
-        });
-
-        // REINICIAR A ILHA APENAS PARA O USUÁRIO (RESPAWN SOLO NO CHÃO)
-        function requestRespawnSolo() {
-            if (ws && ws.readyState === 1) {
-                ws.send(JSON.stringify({ type: 'respawn' }));
-            }
-            const spawnX = (myTeam === 'red') ? 48 : -48;
-            const spawnZ = (myTeam === 'red') ? 48 : -48;
-            resetLocalPlayerSolo(spawnX, spawnZ);
+            localPlayer.userData.glider.visible = false;
         }
-
-        function resetLocalPlayerSolo(spawnX, spawnZ) {
-            localStats.health = 100;
-            localStats.shield = 100;
-            localStats.isAlive = true;
-            localStats.isSpectating = false;
-
-            document.getElementById('player-status-hud').style.display = 'flex';
-            document.getElementById('weapon-hud-container').style.display = 'flex';
-            document.getElementById('spectator-hud').style.display = 'none';
-            document.getElementById('eliminated-screen').style.display = 'none';
-            document.getElementById('victory-screen').style.display = 'none';
-
-            if (localPlayer) {
-                localPlayer.visible = true;
-                const groundY = getGroundHeight(spawnX, spawnZ);
-                localPlayer.position.set(spawnX, groundY, spawnZ);
-                isGliding = false; // Começa do chão!
-                playerVelY = 0;
-                isGrounded = true;
-                localPlayer.userData.glider.visible = false;
-            }
-            updateHUD();
-            if (!isTouchDevice) {
-                try { canvas.requestPointerLock(); } catch(e){}
-            }
-            showToast('<i data-lucide="rotate-ccw"></i> Você renasceu no chão na base do seu time!');
+        updateHUD();
+        if (!isTouchDevice) {
+            try { canvas.requestPointerLock(); } catch(e){}
         }
+        showToast('<i data-lucide="rotate-ccw"></i> Você renasceu no chão na zona segura do seu time!');
+    }
 
-        document.getElementById('btn-victory-restart').addEventListener('click', requestRespawnSolo);
-        document.getElementById('btn-elim-restart').addEventListener('click', requestRespawnSolo);
+    document.getElementById('btn-victory-restart').addEventListener('click', requestRespawnSolo);
+    document.getElementById('btn-elim-restart').addEventListener('click', requestRespawnSolo);
 
         const btnSpecRespawn = document.getElementById('btn-spectator-respawn');
         if (btnSpecRespawn) btnSpecRespawn.addEventListener('click', requestRespawnSolo);
@@ -5016,6 +5052,16 @@
                 e.stopPropagation();
                 toggleCameraView();
             }, { passive: false });
+        }
+
+        const btnMobRespawn = document.getElementById('btn-mobile-respawn');
+        if (btnMobRespawn) {
+            btnMobRespawn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                requestRespawnSolo();
+            }, { passive: false });
+            btnMobRespawn.addEventListener('click', requestRespawnSolo);
         }
 
         window.addEventListener('mousemove', (e) => {
