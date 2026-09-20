@@ -39,11 +39,12 @@ const server = http.createServer((req, res) => {
         const headers = {
             'Content-Type': contentType,
             'Content-Length': stats.size,
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
             'Pragma': 'no-cache',
             'Expires': '0',
             'Surrogate-Control': 'no-store',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+            'Clear-Site-Data': '"cache"'
         };
 
         if (req.method === 'HEAD') {
@@ -55,6 +56,8 @@ const server = http.createServer((req, res) => {
         fs.createReadStream(filePath).pipe(res);
     });
 });
+
+const SERVER_BUILD_VERSION = '2.5.2';
 
 const wss = new WebSocketServer({ server });
 
@@ -933,6 +936,7 @@ function getRoomList() {
 function broadcastRoomListToLobby() {
     const data = JSON.stringify({
         type: 'room_list',
+        version: SERVER_BUILD_VERSION,
         rooms: getRoomList()
     });
     for (const client of wss.clients) {
@@ -968,9 +972,10 @@ wss.on('connection', (ws) => {
     let currentRoom = null;
     let myPlayer = null;
 
-    // Envia imediatamente a lista de salas disponíveis
+    // Envia imediatamente a lista de salas disponíveis e versão
     ws.send(JSON.stringify({
         type: 'room_list',
+        version: SERVER_BUILD_VERSION,
         rooms: getRoomList()
     }));
 
@@ -1067,6 +1072,7 @@ wss.on('connection', (ws) => {
 
                 ws.send(JSON.stringify({
                     type: 'welcome',
+                    version: SERVER_BUILD_VERSION,
                     id: playerId,
                     roomId: room.id,
                     roomName: room.name,

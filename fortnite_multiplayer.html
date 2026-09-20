@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Bernardonite</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script>
+        // Purga agressiva de CacheStorage e Service Workers em navegadores mobile
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let r of registrations) r.unregister();
+            });
+        }
+        if ('caches' in window) {
+            caches.keys().then(keys => {
+                for (let k of keys) caches.delete(k);
+            });
+        }
+    </script>
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -1532,9 +1548,14 @@
                     <span style="font-size: 11px; font-weight: bold; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
                         <i data-lucide="server"></i> Salas Ativas na Ilha:
                     </span>
-                    <button type="button" id="btn-toggle-create-room" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 5px 12px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="plus-circle"></i> Criar Nova Sala
-                    </button>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" id="btn-force-refresh" title="Forçar limpeza de cache e recarregar a versão mais recente" style="background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; color: #fca5a5; font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <i data-lucide="rotate-ccw"></i> Limpar Cache
+                        </button>
+                        <button type="button" id="btn-toggle-create-room" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 5px 12px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="plus-circle"></i> Criar Sala
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Painel de Criação de Sala Personalizada -->
@@ -1692,9 +1713,11 @@
 
     <canvas id="viewport"></canvas>
 
-    <script src="js/three.min.js"></script>
+    <script src="js/three.min.js?v=2.5.2"></script>
 
     <script>
+        const CLIENT_BUILD_VERSION = '2.5.2';
+
         // ==========================================
         // HELPER PARA ÍCONES SVG DINÂMICOS (LUCIDE)
         // ==========================================
@@ -3074,6 +3097,11 @@
                 const data = JSON.parse(msg.data);
 
                 if (data.type === 'room_list') {
+                    if (data.version && data.version !== CLIENT_BUILD_VERSION) {
+                        console.warn(`[CACHE BUST] Nova versão do servidor detectada (${data.version} vs ${CLIENT_BUILD_VERSION}). Recarregando...`);
+                        window.location.href = window.location.pathname + '?v=' + Date.now();
+                        return;
+                    }
                     renderRoomsList(data.rooms || []);
                 }
 
@@ -3096,6 +3124,11 @@
                 }
 
                 if (data.type === 'welcome') {
+                    if (data.version && data.version !== CLIENT_BUILD_VERSION) {
+                        console.warn(`[CACHE BUST] Nova versão do servidor detectada (${data.version} vs ${CLIENT_BUILD_VERSION}). Recarregando...`);
+                        window.location.href = window.location.pathname + '?v=' + Date.now();
+                        return;
+                    }
                     myId = data.id;
                     if (data.aliveCount !== undefined) updateAliveCount(data.aliveCount);
                     if (data.teamScores) updateTeamScores(data.teamScores);
@@ -4166,6 +4199,24 @@
                 if (panel) {
                     panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
                     refreshIcons();
+                }
+            });
+        }
+
+        const btnForceRefresh = document.getElementById('btn-force-refresh');
+        if (btnForceRefresh) {
+            btnForceRefresh.addEventListener('click', () => {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(registrations => {
+                        for (let r of registrations) r.unregister();
+                    });
+                }
+                if ('caches' in window) {
+                    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
+                        window.location.href = window.location.pathname + '?nocache=' + Date.now();
+                    });
+                } else {
+                    window.location.href = window.location.pathname + '?nocache=' + Date.now();
                 }
             });
         }
