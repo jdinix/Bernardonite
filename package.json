@@ -1,0 +1,25 @@
+{
+  "name": "bernardonite",
+  "version": "1.0.0",
+  "description": "Bernardonite - Fortnite Battle Royale Multiplayer 3D com Three.js, WebSockets, Bots IA e Construção",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "fortnite",
+    "battle-royale",
+    "threejs",
+    "webgl",
+    "multiplayer",
+    "websockets",
+    "gaming",
+    "bernardonite"
+  ],
+  "author": "Bernardo & Família",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "ws": "^8.21.3"
+  }
+}

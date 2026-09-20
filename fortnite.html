@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortnite do Bernardo - Battle Royale 3D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Impact, Tahoma, sans-serif;
+            background: #0b101e;
+            color: #fff;
+        }
+
+        #viewport {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        /* Mira estilo Fortnite */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 28px;
+            height: 28px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .ch-dot {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 4px #000;
+        }
+
+        .ch-line {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 3px #000;
+            transition: transform 0.05s;
+        }
+
+        .ch-top { top: 0; left: 13px; width: 2px; height: 8px; }
+        .ch-bottom { bottom: 0; left: 13px; width: 2px; height: 8px; }
+        .ch-left { top: 13px; left: 0; width: 8px; height: 2px; }
+        .ch-right { top: 13px; right: 0; width: 8px; height: 2px; }
+
+        /* Placar Superior Fortnite (Vivos e Kills) */
+        .top-hud {
+            position: absolute;
+            top: 18px;
+            right: 25px;
+            display: flex;
+            gap: 16px;
+            z-index: 50;
+        }
+
+        .stat-badge {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            border: 2px solid #38bdf8;
+            padding: 8px 18px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 900;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            letter-spacing: 0.5px;
+        }
+
+        .stat-badge.kills {
+            border-color: #f59e0b;
+        }
+
+        /* Barra de Vida e Escudo (Canto Inferior Esquerdo) */
+        .player-status {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 50;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            min-width: 220px;
+        }
+
+        .bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .bar-label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .bar-bg {
+            width: 100%;
+            height: 12px;
+            background: #1e293b;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .shield-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+            transition: width 0.2s ease;
+        }
+
+        .health-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #16a34a, #4ade80);
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.7);
+            transition: width 0.2s ease;
+        }
+
+        .wood-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 800;
+            color: #d97706;
+            margin-top: 4px;
+        }
+
+        /* Inventário de Armas e Construção (Inferior Direito) */
+        .weapon-hud {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            z-index: 50;
+        }
+
+        .build-menu {
+            display: flex;
+            gap: 8px;
+        }
+
+        .build-slot {
+            width: 60px;
+            height: 52px;
+            background: rgba(30, 41, 59, 0.85);
+            border: 2px solid #ca8a04;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .build-slot.active {
+            border-color: #facc15;
+            background: rgba(202, 138, 4, 0.4);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.7);
+        }
+
+        .build-slot span {
+            font-size: 9px;
+            color: #fef08a;
+        }
+
+        .slots-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .slot {
+            width: 65px;
+            height: 65px;
+            background: rgba(30, 41, 59, 0.85);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .slot.gold {
+            border-color: #eab308;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(15, 23, 42, 0.9));
+        }
+
+        .slot.active {
+            border-width: 3px;
+            border-color: #fff;
+            transform: translateY(-6px) scale(1.08);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+        }
+
+        .slot-key {
+            position: absolute;
+            top: 3px;
+            left: 5px;
+            font-size: 10px;
+            font-weight: 900;
+            color: #94a3b8;
+        }
+
+        .slot-title {
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* Banner de Vitória Régia (#1 VICTORY ROYALE) */
+        #victory-banner {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            background: linear-gradient(180deg, #facc15, #eab308);
+            color: #1e1b4b;
+            padding: 20px 60px;
+            border-radius: 20px;
+            border: 6px solid #fff;
+            box-shadow: 0 0 80px rgba(250, 204, 21, 0.9), 0 0 30px rgba(0,0,0,0.8);
+            text-align: center;
+            z-index: 200;
+            display: none;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+
+        #victory-banner h1 {
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0 #fff;
+        }
+
+        #victory-banner p {
+            font-size: 20px;
+            font-weight: 800;
+            color: #431407;
+            margin-top: 4px;
+        }
+
+        /* Tela de Início / Bloqueador */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 16, 30, 0.92);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 150;
+        }
+
+        .start-card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 3px solid #38bdf8;
+            border-radius: 24px;
+            padding: 35px 45px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 0 60px rgba(56, 189, 248, 0.4);
+        }
+
+        .start-card h1 {
+            font-size: 40px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #38bdf8, #facc15, #f43f5e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .start-card p {
+            color: #cbd5e1;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .controls-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .ctrl-item {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ctrl-item b {
+            color: #38bdf8;
+        }
+
+        .drop-btn {
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            color: #1e1b4b;
+            font-size: 22px;
+            font-weight: 900;
+            padding: 16px 45px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+
+        .drop-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 45px rgba(245, 158, 11, 0.9);
+        }
+
+        /* Notificações no centro */
+        #game-toast {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #facc15;
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 800;
+            z-index: 80;
+            opacity: 0;
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.6);
+        }
+
+        /* Números de Dano flutuantes */
+        .dmg-text {
+            position: absolute;
+            font-weight: 900;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 70;
+            text-shadow: 0 0 5px #000, 2px 2px 0 #000;
+            animation: floatUp 0.8s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1.4); }
+            100% { opacity: 0; transform: translate(-50%, -100px) scale(0.9); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mira -->
+    <div id="crosshair">
+        <div class="ch-dot"></div>
+        <div class="ch-line ch-top"></div>
+        <div class="ch-line ch-bottom"></div>
+        <div class="ch-line ch-left"></div>
+        <div class="ch-line ch-right"></div>
+    </div>
+
+    <!-- Notificação -->
+    <div id="game-toast"></div>
+
+    <!-- Placar Superior -->
+    <div class="top-hud">
+        <div class="stat-badge">
+            <span>👥</span> VIVOS: <span id="alive-count" style="color: #38bdf8;">5</span>
+        </div>
+        <div class="stat-badge kills">
+            <span>🎯</span> ELIMINAÇÕES: <span id="kills-count" style="color: #facc15;">0</span>
+        </div>
+    </div>
+
+    <!-- Vida, Escudo e Recursos -->
+    <div class="player-status">
+        <div class="bar-container">
+            <div class="bar-label">
+                <span style="color: #38bdf8;">🛡️ ESCUDO</span>
+                <span id="shield-num" style="color: #38bdf8;">100</span>
+            </div>
+            <div class="bar-bg">
+                <div class="shield-fill" id="shield-bar"></div>
+            </div>
+        </div>
+
+        <div class="bar-container">
+            <div class="bar-label">
+                <span style="color: #4ade80;">💚 VIDA</span>
+                <span id="health-num" style="color: #4ade80;">100</span>
+            </div>
+            <div class="bar-bg">
+                <div class="health-fill" id="health-bar"></div>
+            </div>
+        </div>
+
+        <div class="wood-count">
+            <span>🪵</span> Madeira: <span id="wood-num">150</span>
+        </div>
+    </div>
+
+    <!-- Slots de Armas e Construção -->
+    <div class="weapon-hud">
+        <!-- Construções Rápidas -->
+        <div class="build-menu">
+            <div class="build-slot" id="build-wall" title="Tecla Z">
+                🧱 Parede
+                <span>(Z) 10🪵</span>
+            </div>
+            <div class="build-slot" id="build-ramp" title="Tecla X">
+                📐 Rampa
+                <span>(X) 10🪵</span>
+            </div>
+            <div class="build-slot" id="build-floor" title="Tecla C">
+                🟫 Chão
+                <span>(C) 10🪵</span>
+            </div>
+        </div>
+
+        <!-- Armas -->
+        <div class="slots-row">
+            <div class="slot active" id="slot-1" title="Tecla 1">
+                <span class="slot-key">1</span>
+                <span>⛏️</span>
+                <span class="slot-title">Picareta</span>
+            </div>
+            <div class="slot gold" id="slot-2" title="Tecla 2">
+                <span class="slot-key">2</span>
+                <span>🔫</span>
+                <span class="slot-title" style="color: #facc15;">SCAR Dourada</span>
+            </div>
+            <div class="slot" id="slot-3" title="Tecla 3">
+                <span class="slot-key">3</span>
+                <span>🧪</span>
+                <span class="slot-title" style="color: #38bdf8;">Mini Shield</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banner Vitória Régia -->
+    <div id="victory-banner">
+        <h1>#1 VICTORY ROYALE!</h1>
+        <p>🏆 VITÓRIA RÉGIA PARA O BERNARDO! 🏆</p>
+    </div>
+
+    <!-- Tela de Início / Saltar do Ônibus -->
+    <div id="start-screen">
+        <div class="start-card">
+            <h1>FORTNITE DO BERNARDO</h1>
+            <p>Salte do céu com sua asa-delta, farme madeira, construa rampas, atire com a SCAR Dourada e vença os bots para conquistar a <b>Vitória Régia</b>!</p>
+
+            <div class="controls-list">
+                <div class="ctrl-item"><b>🖱️ Botão Esquerdo:</b> Atirar / Bater</div>
+                <div class="ctrl-item"><b>⌨️ W, A, S, D:</b> Correr</div>
+                <div class="ctrl-item"><b>⌨️ Espaço:</b> Pular / Abrir Asa-Delta</div>
+                <div class="ctrl-item"><b>⌨️ Teclas 1, 2, 3:</b> Trocar Armas</div>
+                <div class="ctrl-item"><b>⌨️ Tecla Z:</b> Construir Parede</div>
+                <div class="ctrl-item"><b>⌨️ Tecla X:</b> Construir Rampa</div>
+                <div class="ctrl-item"><b>⌨️ Tecla C:</b> Construir Chão</div>
+                <div class="ctrl-item"><b>🦙 Lhama de Loot:</b> Ache na ilha!</div>
+            </div>
+
+            <button class="drop-btn" id="drop-btn">🪂 SALTAR DO ÔNIBUS!</button>
+        </div>
+    </div>
+
+    <canvas id="viewport"></canvas>
+
+    <!-- Three.js e Ferramentas Locais -->
+    <script src="js/three.min.js"></script>
+
+    <script>
+        // ==========================================
+        // 1. EFEITOS SONOROS COM WEB AUDIO
+        // ==========================================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'shot') {
+                // Tiro potente de SCAR Lendária
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            } else if (type === 'pickaxe') {
+                // Golpe de Picareta farmando madeira
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(70, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'hit_shield') {
+                // Som característico de acertar escudo no Fortnite (som metálico/elétrico)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1400, now + 0.08);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'hit_body') {
+                // Som de acertar dano de vida
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'build') {
+                // Som de colocação rápida de madeira do Fortnite
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(260, now);
+                osc.frequency.setValueAtTime(390, now + 0.04);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            } else if (type === 'shield_drink') {
+                // Beber poção de escudo (glug glug)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.1);
+                osc.frequency.setValueAtTime(850, now + 0.2);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'victory') {
+                // Fanfarra triunfal de Vitória Régia
+                const notes = [440, 554, 659, 880];
+                notes.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    const t = now + idx * 0.18;
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(freq, t);
+                    g.gain.setValueAtTime(0.4, t);
+                    g.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+                    o.start(t);
+                    o.stop(t + 0.5);
+                });
+            } else if (type === 'glider') {
+                // Vento da asa-delta
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(140, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+        }
+
+        // ==========================================
+        // 2. CONFIGURAÇÃO DA CENA THREE.JS
+        // ==========================================
+        const canvas = document.getElementById('viewport');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x60a5fa); // Céu azul vibrante do Fortnite
+        scene.fog = new THREE.FogExp2(0x60a5fa, 0.01);
+
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Iluminação de Sol da Ilha
+        const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambient);
+
+        const sun = new THREE.DirectionalLight(0xfff3d1, 0.9);
+        sun.position.set(40, 100, 30);
+        sun.castShadow = true;
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
+        sun.shadow.camera.left = -50;
+        sun.shadow.camera.right = 50;
+        sun.shadow.camera.top = 50;
+        sun.shadow.camera.bottom = -50;
+        scene.add(sun);
+
+        // ==========================================
+        // 3. TERRENO DA ILHA BATTLE ROYALE
+        // ==========================================
+        const islandGeo = new THREE.PlaneGeometry(240, 240, 48, 48);
+        islandGeo.rotateX(-Math.PI / 2);
+
+        // Ondulações suaves de colinas
+        const posAttr = islandGeo.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+            const x = posAttr.getX(i);
+            const z = posAttr.getZ(i);
+            const dist = Math.hypot(x, z);
+            // Ilha que cai no mar nas bordas
+            let y = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 4.5 + Math.cos(x * 0.02) * 2.0;
+            if (dist > 90) {
+                y -= (dist - 90) * 0.5;
+            }
+            posAttr.setY(i, y);
+        }
+        islandGeo.computeVertexNormals();
+
+        const islandMat = new THREE.MeshLambertMaterial({ color: 0x48bb78 }); // Grama verde vibrante
+        const island = new THREE.Mesh(islandGeo, islandMat);
+        island.receiveShadow = true;
+        scene.add(island);
+
+        // Mar / Oceano em volta
+        const oceanGeo = new THREE.PlaneGeometry(500, 500);
+        const oceanMat = new THREE.MeshLambertMaterial({ color: 0x0284c7, transparent: true, opacity: 0.85 });
+        const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+        ocean.rotation.x = -Math.PI / 2;
+        ocean.position.y = -3.0;
+        scene.add(ocean);
+
+        // Função para obter a altura do chão na ilha
+        function getGroundHeight(x, z) {
+            const dist = Math.hypot(x, z);
+            let y = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 4.5 + Math.cos(x * 0.02) * 2.0;
+            if (dist > 90) y -= (dist - 90) * 0.5;
+            return Math.max(y, -2.8);
+        }
+
+        // ==========================================
+        // 4. ÁRVORES, ROCHAS E A LHAMA DE LOOT
+        // ==========================================
+        const farmableTrees = [];
+        const treeTrunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 4, 7);
+        const treeLeavesGeo = new THREE.ConeGeometry(3, 6, 7);
+        const trunkMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+        const leavesMat = new THREE.MeshLambertMaterial({ color: 0x16a34a });
+
+        function createTree(x, z) {
+            const y = getGroundHeight(x, z);
+            const group = new THREE.Group();
+            group.position.set(x, y, z);
+
+            const trunk = new THREE.Mesh(treeTrunkGeo, trunkMat);
+            trunk.position.y = 2;
+            trunk.castShadow = true;
+            group.add(trunk);
+
+            const leaves = new THREE.Mesh(treeLeavesGeo, leavesMat);
+            leaves.position.y = 5.5;
+            leaves.castShadow = true;
+            group.add(leaves);
+
+            group.userData = { isTree: true, hp: 100 };
+            scene.add(group);
+            farmableTrees.push(group);
+        }
+
+        // Espalhar 35 árvores pela ilha
+        for (let i = 0; i < 35; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 12 + Math.random() * 70;
+            createTree(Math.cos(angle) * dist, Math.sin(angle) * dist);
+        }
+
+        // Criar a Lhama do Fortnite!
+        const llamaGroup = new THREE.Group();
+        const llamaBodyMat = new THREE.MeshLambertMaterial({ color: 0x9333ea }); // Roxo da Lhama
+        const llamaBlueMat = new THREE.MeshLambertMaterial({ color: 0x06b6d4 }); // Azul da sela
+
+        // Corpo
+        const lBody = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 1.8), llamaBodyMat);
+        lBody.position.y = 1.6;
+        llamaGroup.add(lBody);
+
+        // Pescoço e Cabeça
+        const lNeck = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.6), llamaBodyMat);
+        lNeck.position.set(0, 2.8, 0.7);
+        llamaGroup.add(lNeck);
+
+        const lHead = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 1.1), llamaBodyMat);
+        lHead.position.set(0, 3.6, 0.9);
+        llamaGroup.add(lHead);
+
+        // Sela azul
+        const lSaddle = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.8, 1.0), llamaBlueMat);
+        lSaddle.position.set(0, 1.7, 0);
+        llamaGroup.add(lSaddle);
+
+        llamaGroup.position.set(12, getGroundHeight(12, -18), -18);
+        llamaGroup.userData = { isLlama: true, hp: 150 };
+        scene.add(llamaGroup);
+
+        // Baú Dourado
+        const chestGroup = new THREE.Group();
+        const chestMat = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
+        const chestMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.9), chestMat);
+        chestMesh.position.y = 0.4;
+        chestMesh.castShadow = true;
+        chestGroup.add(chestMesh);
+        chestGroup.position.set(-15, getGroundHeight(-15, 10), 10);
+        chestGroup.userData = { isChest: true, opened: false };
+        scene.add(chestGroup);
+
+        // Luz dourada no baú
+        const chestLight = new THREE.PointLight(0xfacc15, 1.5, 8);
+        chestLight.position.set(-15, getGroundHeight(-15, 10) + 1.2, 10);
+        scene.add(chestLight);
+
+        // ==========================================
+        // 5. PERSONAGEM DO BERNARDO & ASA-DELTA (GLIDER)
+        // ==========================================
+        const playerGroup = new THREE.Group();
+
+        // Corpo / Skin estilizada estilo Fortnite
+        const skinMat = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 }); // Azul royal
+        const skinAccMat = new THREE.MeshLambertMaterial({ color: 0x38bdf8 }); // Ciano brilhante
+        const headMat = new THREE.MeshLambertMaterial({ color: 0xffdbac }); // Rosto
+
+        // Tronco
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.5), skinMat);
+        torso.position.y = 1.3;
+        torso.castShadow = true;
+        playerGroup.add(torso);
+
+        // Cabeça com capacete/cabelo gamer
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), headMat);
+        head.position.y = 2.05;
+        head.castShadow = true;
+        playerGroup.add(head);
+
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.25, 0.55), skinAccMat);
+        cap.position.y = 2.25;
+        playerGroup.add(cap);
+
+        // Mochila (Back Bling)
+        const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.3), new THREE.MeshLambertMaterial({ color: 0xf59e0b }));
+        backpack.position.set(0, 1.3, -0.35);
+        playerGroup.add(backpack);
+
+        // Braços
+        const armGeo = new THREE.BoxGeometry(0.25, 0.8, 0.25);
+        const leftArm = new THREE.Mesh(armGeo, skinMat);
+        leftArm.position.set(-0.55, 1.3, 0);
+        playerGroup.add(leftArm);
+
+        const rightArm = new THREE.Mesh(armGeo, skinMat);
+        rightArm.position.set(0.55, 1.3, 0.2);
+        rightArm.rotation.x = -Math.PI / 4;
+        playerGroup.add(rightArm);
+
+        // SCAR Dourada na mão
+        const rifleGroup = new THREE.Group();
+        const goldMat = new THREE.MeshLambertMaterial({ color: 0xeab308, metalness: 0.7 });
+        const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.9), goldMat);
+        const gunBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5), new THREE.MeshLambertMaterial({ color: 0x1e293b }));
+        gunBarrel.rotation.x = Math.PI / 2;
+        gunBarrel.position.z = 0.55;
+        rifleGroup.add(gunBody);
+        rifleGroup.add(gunBarrel);
+        rifleGroup.position.set(0.45, 1.25, 0.45);
+        playerGroup.add(rifleGroup);
+
+        // Picareta
+        const pickaxeGroup = new THREE.Group();
+        const pHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.1), new THREE.MeshLambertMaterial({ color: 0x94a3b8 }));
+        const pBlade = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.7), new THREE.MeshLambertMaterial({ color: 0x06b6d4 }));
+        pBlade.position.y = 0.5;
+        pickaxeGroup.add(pHandle);
+        pickaxeGroup.add(pBlade);
+        pickaxeGroup.position.set(0.45, 1.25, 0.45);
+        pickaxeGroup.rotation.x = Math.PI / 3;
+        pickaxeGroup.visible = false;
+        playerGroup.add(pickaxeGroup);
+
+        // Pernas
+        const legGeo = new THREE.BoxGeometry(0.3, 0.8, 0.3);
+        const leftLeg = new THREE.Mesh(legGeo, skinMat);
+        leftLeg.position.set(-0.25, 0.4, 0);
+        playerGroup.add(leftLeg);
+
+        const rightLeg = new THREE.Mesh(legGeo, skinMat);
+        rightLeg.position.set(0.25, 0.4, 0);
+        playerGroup.add(rightLeg);
+
+        // Asa-Delta do Fortnite (Glider)
+        const gliderGroup = new THREE.Group();
+        const wingMat = new THREE.MeshLambertMaterial({ color: 0xf43f5e, side: THREE.DoubleSide });
+        const wingGeo = new THREE.PlaneGeometry(3.5, 1.4);
+        const wing = new THREE.Mesh(wingGeo, wingMat);
+        wing.rotation.x = Math.PI / 2;
+        gliderGroup.add(wing);
+
+        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.2), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+        strut.position.y = -0.6;
+        gliderGroup.add(strut);
+
+        gliderGroup.position.set(0, 3.2, 0);
+        gliderGroup.visible = true; // Começa planando ao saltar do ônibus!
+        playerGroup.add(gliderGroup);
+
+        // Jogador começa alto no céu saltando do ônibus!
+        playerGroup.position.set(0, 55, 0);
+        scene.add(playerGroup);
+
+        // ==========================================
+        // 6. BOTS INIMIGOS (ALVOS NA ILHA)
+        // ==========================================
+        const enemyBots = [];
+        const enemyMat = new THREE.MeshLambertMaterial({ color: 0xef4444 }); // Skin vermelha inimiga
+
+        function createEnemyBot(x, z, name) {
+            const botGroup = new THREE.Group();
+            const bTorso = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.5), enemyMat);
+            bTorso.position.y = 1.3;
+            botGroup.add(bTorso);
+
+            const bHead = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), headMat);
+            bHead.position.y = 2.05;
+            botGroup.add(bHead);
+
+            const y = getGroundHeight(x, z);
+            botGroup.position.set(x, y, z);
+            botGroup.userData = {
+                isEnemy: true,
+                name: name,
+                shield: 50,
+                hp: 100,
+                alive: true,
+                speed: 3 + Math.random() * 2,
+                moveAngle: Math.random() * Math.PI * 2
+            };
+
+            // Barra de vida flutuante sobre o bot
+            const hpBarGeo = new THREE.PlaneGeometry(1.2, 0.15);
+            const hpBarMat = new THREE.MeshBasicMaterial({ color: 0x4ade80 });
+            const hpBar = new THREE.Mesh(hpBarGeo, hpBarMat);
+            hpBar.position.y = 2.6;
+            botGroup.add(hpBar);
+            botGroup.userData.hpBar = hpBar;
+
+            scene.add(botGroup);
+            enemyBots.push(botGroup);
+        }
+
+        createEnemyBot(-20, -25, "Bot Caçador");
+        createEnemyBot(30, -15, "Bot Ninja");
+        createEnemyBot(25, 30, "Bot Trooper");
+        createEnemyBot(-35, 20, "Bot Lenda");
+
+        let aliveCount = 5; // 4 bots + Bernardo
+        let killsCount = 0;
+
+        // ==========================================
+        // 7. SISTEMA DE CONSTRUÇÃO (BUILDING) DO FORTNITE
+        // ==========================================
+        const placedBuilds = [];
+        const woodTextureMat = new THREE.MeshLambertMaterial({
+            color: 0xb45309,
+            transparent: true,
+            opacity: 0.92,
+            side: THREE.DoubleSide
+        });
+
+        function buildStructure(type) {
+            if (playerStats.wood < 10) {
+                showToast("⚠️ Sem madeira suficiente! (Bata nas árvores com a picareta)");
+                playSound('hit_body');
+                return;
+            }
+
+            playerStats.wood -= 10;
+            updateHUD();
+            playSound('build');
+
+            // Posiciona exatamente na frente do jogador alinhado à rotação
+            const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), playerGroup.rotation.y);
+            const buildPos = playerGroup.position.clone().add(forward.clone().multiplyScalar(3.2));
+            buildPos.y = Math.floor(playerGroup.position.y / 3) * 3 + 1.5;
+
+            let mesh;
+            if (type === 'wall') {
+                // Parede
+                const geo = new THREE.BoxGeometry(3.5, 3.0, 0.25);
+                mesh = new THREE.Mesh(geo, woodTextureMat);
+                mesh.position.copy(buildPos);
+                mesh.rotation.y = playerGroup.rotation.y;
+                showToast("🧱 Parede de Madeira construída!");
+            } else if (type === 'ramp') {
+                // Rampa / Escada inclinada
+                const geo = new THREE.BoxGeometry(3.5, 0.25, 4.2);
+                mesh = new THREE.Mesh(geo, woodTextureMat);
+                mesh.position.copy(buildPos);
+                mesh.rotation.y = playerGroup.rotation.y;
+                mesh.rotation.x = -Math.PI / 4.5;
+                showToast("📐 Rampa de Madeira construída!");
+            } else if (type === 'floor') {
+                // Chão / Piso
+                const geo = new THREE.BoxGeometry(3.5, 0.25, 3.5);
+                mesh = new THREE.Mesh(geo, woodTextureMat);
+                mesh.position.copy(buildPos);
+                mesh.position.y = Math.floor(playerGroup.position.y / 3) * 3;
+                showToast("🟫 Chão de Madeira construído!");
+            }
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { isBuild: true, hp: 150 };
+            scene.add(mesh);
+            placedBuilds.push(mesh);
+        }
+
+        // ==========================================
+        // 8. ESTADO DO JOGADOR, ARMAS E TIRO
+        // ==========================================
+        const playerStats = {
+            shield: 100,
+            health: 100,
+            wood: 150,
+            activeSlot: 2 // Começa com a SCAR Dourada!
+        };
+
+        function selectSlot(slotNum) {
+            playerStats.activeSlot = slotNum;
+            document.querySelectorAll('.slot').forEach((s, idx) => {
+                s.classList.toggle('active', idx + 1 === slotNum);
+            });
+
+            if (slotNum === 1) {
+                // Picareta
+                rifleGroup.visible = false;
+                pickaxeGroup.visible = true;
+                showToast("⛏️ Picareta equipada (Bata nas árvores!)");
+            } else if (slotNum === 2) {
+                // SCAR Dourada
+                rifleGroup.visible = true;
+                pickaxeGroup.visible = false;
+                showToast("🔫 SCAR Dourada Lendária pronta!");
+            } else if (slotNum === 3) {
+                // Mini Shield
+                rifleGroup.visible = false;
+                pickaxeGroup.visible = false;
+                drinkMiniShield();
+            }
+            playSound('build');
+        }
+
+        function drinkMiniShield() {
+            if (playerStats.shield < 100) {
+                playerStats.shield = Math.min(100, playerStats.shield + 50);
+                playSound('shield_drink');
+                showToast("🧪 +50 de Escudo recuperado!");
+                updateHUD();
+            } else {
+                showToast("🛡️ Escudo já está no máximo!");
+            }
+        }
+
+        // Dano Flutuante estilo Fortnite
+        function spawnDamageNumber(x, y, z, damage, isShield, isCrit = false) {
+            const screenPos = new THREE.Vector3(x, y, z).project(camera);
+            const el = document.createElement('div');
+            el.className = 'dmg-text';
+            el.style.left = `${(screenPos.x * 0.5 + 0.5) * window.innerWidth}px`;
+            el.style.top = `${(-screenPos.y * 0.5 + 0.5) * window.innerHeight}px`;
+            el.style.color = isCrit ? '#facc15' : (isShield ? '#38bdf8' : '#fff');
+            el.innerText = `-${damage}${isCrit ? ' CRÍTICO!' : ''}`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
+        // Rastro de Bala / Projétil
+        function spawnTracer(start, target) {
+            const geo = new THREE.BufferGeometry().setFromPoints([start, target]);
+            const mat = new THREE.LineBasicMaterial({ color: 0xfde047, linewidth: 3 });
+            const line = new THREE.Line(geo, mat);
+            scene.add(line);
+            setTimeout(() => {
+                scene.remove(line);
+                geo.dispose();
+                mat.dispose();
+            }, 60);
+        }
+
+        // Disparar arma ou bater picareta
+        function fireWeapon() {
+            if (playerStats.activeSlot === 1) {
+                // Ação da Picareta
+                playSound('pickaxe');
+                pickaxeGroup.rotation.x = Math.PI / 1.5;
+                setTimeout(() => pickaxeGroup.rotation.x = Math.PI / 3, 120);
+
+                // Checa árvores perto
+                farmableTrees.forEach((tree, idx) => {
+                    const dist = playerGroup.position.distanceTo(tree.position);
+                    if (dist < 5.0) {
+                        playerStats.wood += 20;
+                        tree.userData.hp -= 35;
+                        spawnDamageNumber(tree.position.x, tree.position.y + 2, tree.position.z, 35, false);
+                        showToast(`🪵 +20 Madeira! (Total: ${playerStats.wood})`);
+                        updateHUD();
+
+                        if (tree.userData.hp <= 0) {
+                            scene.remove(tree);
+                            farmableTrees.splice(idx, 1);
+                            showToast("🪓 Árvore derrubada!");
+                        }
+                    }
+                });
+
+                // Checa se abriu o Baú
+                if (!chestGroup.userData.opened && playerGroup.position.distanceTo(chestGroup.position) < 4.5) {
+                    chestGroup.userData.opened = true;
+                    chestMesh.material.color.set(0x4ade80);
+                    playSound('victory');
+                    playerStats.wood += 80;
+                    playerStats.shield = 100;
+                    showToast("🎁 BAÚ LENDÁRIO ABERTO! +80 Madeira e Escudo Full!");
+                    updateHUD();
+                }
+
+                // Checa Lhama
+                if (llamaGroup.parent && playerGroup.position.distanceTo(llamaGroup.position) < 5.0) {
+                    llamaGroup.userData.hp -= 50;
+                    spawnDamageNumber(llamaGroup.position.x, llamaGroup.position.y + 2, llamaGroup.position.z, 50, true);
+                    if (llamaGroup.userData.hp <= 0) {
+                        scene.remove(llamaGroup);
+                        playSound('victory');
+                        playerStats.wood += 200;
+                        showToast("🦙 LHAMA DE LOOT ABERTA! +200 Madeira!");
+                        updateHUD();
+                    }
+                }
+            } else if (playerStats.activeSlot === 2) {
+                // SCAR DOURADA
+                playSound('shot');
+
+                // Animação de recuo
+                rifleGroup.position.z -= 0.1;
+                setTimeout(() => rifleGroup.position.z += 0.1, 70);
+
+                // Raycast do centro da tela para acertar alvos
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+
+                const targets = [];
+                enemyBots.forEach(b => { if (b.userData.alive) targets.push(...b.children); });
+                farmableTrees.forEach(t => targets.push(...t.children));
+                targets.push(llamaGroup);
+
+                const hits = raycaster.intersectObjects(targets, true);
+                const muzzlePos = rifleGroup.getWorldPosition(new THREE.Vector3());
+
+                if (hits.length > 0) {
+                    const hit = hits[0];
+                    spawnTracer(muzzlePos, hit.point);
+
+                    // Achar bot atingido
+                    let current = hit.object;
+                    while (current && !current.userData.isEnemy && current.parent) {
+                        current = current.parent;
+                    }
+
+                    if (current && current.userData.isEnemy && current.userData.alive) {
+                        const bot = current;
+                        const isHeadshot = (hit.point.y - bot.position.y) > 1.8;
+                        const dmg = isHeadshot ? 72 : 36;
+
+                        if (bot.userData.shield > 0) {
+                            bot.userData.shield -= dmg;
+                            playSound('hit_shield');
+                            spawnDamageNumber(hit.point.x, hit.point.y, hit.point.z, dmg, true, isHeadshot);
+                        } else {
+                            bot.userData.hp -= dmg;
+                            playSound('hit_body');
+                            spawnDamageNumber(hit.point.x, hit.point.y, hit.point.z, dmg, false, isHeadshot);
+                        }
+
+                        // Atualiza barra de vida do bot
+                        const pct = Math.max(0, bot.userData.hp / 100);
+                        bot.userData.hpBar.scale.x = pct;
+
+                        if (bot.userData.hp <= 0) {
+                            bot.userData.alive = false;
+                            scene.remove(bot);
+                            killsCount++;
+                            aliveCount--;
+                            playSound('victory');
+                            showToast(`🎯 Você eliminou ${bot.userData.name}!`);
+                            document.getElementById('alive-count').innerText = aliveCount;
+                            document.getElementById('kills-count').innerText = killsCount;
+
+                            if (aliveCount <= 1) {
+                                triggerVictoryRoyale();
+                            }
+                        }
+                    }
+                } else {
+                    // Tiro no ar
+                    const end = muzzlePos.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(60));
+                    spawnTracer(muzzlePos, end);
+                }
+            }
+        }
+
+        function triggerVictoryRoyale() {
+            playSound('victory');
+            const banner = document.getElementById('victory-banner');
+            banner.style.display = 'block';
+            setTimeout(() => {
+                banner.style.opacity = '1';
+                banner.style.transform = 'translate(-50%, -50%) scale(1.0)';
+            }, 50);
+            showToast("👑 PARABÉNS BERNARDO! VOCÊ É O CAMPEÃO!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('game-toast');
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            clearTimeout(toast.timeout);
+            toast.timeout = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-10px)';
+            }, 2500);
+        }
+
+        function updateHUD() {
+            document.getElementById('shield-bar').style.width = `${playerStats.shield}%`;
+            document.getElementById('shield-num').innerText = playerStats.shield;
+            document.getElementById('health-bar').style.width = `${playerStats.health}%`;
+            document.getElementById('health-num').innerText = playerStats.health;
+            document.getElementById('wood-num').innerText = playerStats.wood;
+        }
+
+        // ==========================================
+        // 9. CONTROLES DE MOUSE E TECLADO
+        // ==========================================
+        let isLocked = false;
+        let isGliding = true;
+        const keys = {};
+
+        document.getElementById('drop-btn').addEventListener('click', () => {
+            canvas.requestPointerLock();
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            isLocked = (document.pointerLockElement === canvas);
+            document.getElementById('start-screen').style.display = isLocked ? 'none' : 'flex';
+        });
+
+        // Rotação da Câmera estilo Terceira Pessoa (Over-the-shoulder)
+        let yaw = 0;
+        let pitch = 0.15;
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isLocked) return;
+            yaw -= e.movementX * 0.003;
+            pitch -= e.movementY * 0.003;
+            pitch = Math.max(-0.6, Math.min(0.8, pitch)); // Trava limite vertical
+            playerGroup.rotation.y = yaw;
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            if (!isLocked) return;
+            if (e.button === 0) fireWeapon();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (e.key === '1') selectSlot(1);
+            if (e.key === '2') selectSlot(2);
+            if (e.key === '3') selectSlot(3);
+            if (e.code === 'KeyZ') buildStructure('wall');
+            if (e.code === 'KeyX') buildStructure('ramp');
+            if (e.code === 'KeyC') buildStructure('floor');
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        document.getElementById('slot-1').addEventListener('click', () => selectSlot(1));
+        document.getElementById('slot-2').addEventListener('click', () => selectSlot(2));
+        document.getElementById('slot-3').addEventListener('click', () => selectSlot(3));
+
+        document.getElementById('build-wall').addEventListener('click', () => buildStructure('wall'));
+        document.getElementById('build-ramp').addEventListener('click', () => buildStructure('ramp'));
+        document.getElementById('build-floor').addEventListener('click', () => buildStructure('floor'));
+
+        // ==========================================
+        // 10. LOOP DE JOGO (FÍSICA, BOTS E RENDERIZAÇÃO)
+        // ==========================================
+        let lastTime = performance.now();
+        let playerVelY = 0;
+        let isGrounded = false;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = performance.now();
+            const dt = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+
+            if (isLocked) {
+                // Movimento do Jogador
+                const speed = isGliding ? 14.0 : 9.5;
+                const moveVec = new THREE.Vector3();
+
+                if (keys['KeyW']) moveVec.z += 1;
+                if (keys['KeyS']) moveVec.z -= 1;
+                if (keys['KeyA']) moveVec.x += 1;
+                if (keys['KeyD']) moveVec.x -= 1;
+                moveVec.normalize();
+
+                const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+                const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+
+                playerGroup.position.addScaledVector(forward, moveVec.z * speed * dt);
+                playerGroup.position.addScaledVector(right, moveVec.x * speed * dt);
+
+                // Gravidade / Pouso com Asa-Delta
+                const groundY = getGroundHeight(playerGroup.position.x, playerGroup.position.z);
+
+                if (isGliding) {
+                    playerGroup.position.y -= 3.5 * dt; // Queda lenta de asa-delta
+                    gliderGroup.visible = true;
+                    if (playerGroup.position.y <= groundY + 0.1) {
+                        playerGroup.position.y = groundY;
+                        isGliding = false;
+                        gliderGroup.visible = false;
+                        showToast("🪂 Você aterrissou na ilha! Hora da batalha!");
+                        playSound('build');
+                    }
+                } else {
+                    // Pulo e física terrestre
+                    if (keys['Space'] && isGrounded) {
+                        playerVelY = 9.0;
+                        isGrounded = false;
+                    }
+
+                    playerVelY -= 24.0 * dt; // Gravidade
+                    playerGroup.position.y += playerVelY * dt;
+
+                    if (playerGroup.position.y <= groundY) {
+                        playerGroup.position.y = groundY;
+                        playerVelY = 0;
+                        isGrounded = true;
+                    }
+                }
+
+                // Animação de caminhada das pernas
+                if (moveVec.lengthSq() > 0 && isGrounded) {
+                    const legAngle = Math.sin(now * 0.012) * 0.6;
+                    leftLeg.rotation.x = legAngle;
+                    rightLeg.rotation.x = -legAngle;
+                } else {
+                    leftLeg.rotation.x = 0;
+                    rightLeg.rotation.x = 0;
+                }
+
+                // IA dos Bots Inimigos (Movem-se pela ilha)
+                enemyBots.forEach(bot => {
+                    if (!bot.userData.alive) return;
+                    bot.userData.moveAngle += (Math.random() - 0.5) * 0.08;
+                    const bX = Math.cos(bot.userData.moveAngle) * bot.userData.speed * dt;
+                    const bZ = Math.sin(bot.userData.moveAngle) * bot.userData.speed * dt;
+                    bot.position.x += bX;
+                    bot.position.z += bZ;
+                    bot.position.y = getGroundHeight(bot.position.x, bot.position.z);
+                    bot.rotation.y = bot.userData.moveAngle;
+
+                    // Ocasionalmente disparam em direção ao jogador se estiver perto
+                    const distToPlayer = bot.position.distanceTo(playerGroup.position);
+                    if (distToPlayer < 22 && Math.random() < 0.008) {
+                        playSound('shot');
+                        // Se acertar o Bernardo
+                        if (playerStats.shield > 0) {
+                            playerStats.shield = Math.max(0, playerStats.shield - 15);
+                            playSound('hit_shield');
+                        } else {
+                            playerStats.health = Math.max(10, playerStats.health - 15);
+                            playSound('hit_body');
+                        }
+                        updateHUD();
+                    }
+                });
+
+                // Câmera em 3ª Pessoa (Over-the-shoulder Fortnite)
+                const camOffset = new THREE.Vector3(0.9, 1.8, -3.4);
+                camOffset.applyEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+                camera.position.copy(playerGroup.position).add(camOffset);
+
+                const lookTarget = playerGroup.position.clone().add(new THREE.Vector3(0, 1.6, 0));
+                lookTarget.add(new THREE.Vector3(0, 0, 10).applyEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ')));
+                camera.lookAt(lookTarget);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
