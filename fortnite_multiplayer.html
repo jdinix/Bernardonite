@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fortnite Battle Royale - Bernardo & Família (Times, Labirinto & Armas)</title>
+    <title>Bernardonite</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         * {
@@ -1329,7 +1329,7 @@
          ==================================================== -->
     <div id="lobby-screen">
         <div class="lobby-box">
-            <h1>FORTNITE BATTLE ROYALE</h1>
+            <h1>BERNARDONITE</h1>
             <p>Bernardo, Família & Amigos — Times, Labirinto 3D e Novas Armas!</p>
 
             <!-- Nomes Rápidos Pré-definidos -->
@@ -1348,6 +1348,25 @@
             <div class="input-group">
                 <label>Ou Digite seu Nick Customizado:</label>
                 <input type="text" id="player-name-input" value="Bernardo" maxlength="15">
+            </div>
+
+            <!-- Seletor de Quantidade de Bots -->
+            <div class="bot-selector-container" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.7); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">🤖 Bots na Batalha:</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" id="btn-bot-minus" style="width: 32px; height: 32px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">-</button>
+                        <span id="bot-count-text" style="font-size: 15px; font-weight: 800; color: #38bdf8; min-width: 55px; text-align: center;">6 Bots</span>
+                        <button type="button" id="btn-bot-plus" style="width: 32px; height: 32px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">+</button>
+                    </div>
+                </div>
+                <div class="bot-chips-grid" style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <button type="button" class="bot-chip-opt" data-bots="0" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">0 (PvP)</button>
+                    <button type="button" class="bot-chip-opt" data-bots="4" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">4 Bots</button>
+                    <button type="button" class="bot-chip-opt selected" data-bots="6" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #0284c7; border: 1px solid #38bdf8; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer;">6 Bots</button>
+                    <button type="button" class="bot-chip-opt" data-bots="10" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">10 Bots</button>
+                    <button type="button" class="bot-chip-opt" data-bots="16" style="flex: 1; min-width: 52px; padding: 6px 4px; font-size: 11px; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-weight: bold; cursor: pointer;">16 (Guerra)</button>
+                </div>
             </div>
 
             <!-- Escolha de Times (Azul x Vermelho) -->
@@ -1523,6 +1542,84 @@
         }
 
         // ==========================================
+        // EFEITO SONORO REALISTA DE PEIDO (TECLA S)
+        // ==========================================
+        function playFartSound() {
+            try {
+                if (!audioCtx) return;
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+
+                // Oscilador de onda dente de serra descendente (tom característico)
+                const osc = audioCtx.createOscillator();
+                const oscGain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+
+                const startFreq = 120 + Math.random() * 25;
+                const endFreq = 40 + Math.random() * 8;
+                osc.frequency.setValueAtTime(startFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.38);
+
+                // LFO de modulação de frequência (vibração rápida das bochechas / flutter)
+                const lfo = audioCtx.createOscillator();
+                const lfoGain = audioCtx.createGain();
+                lfo.type = 'sawtooth';
+                lfo.frequency.setValueAtTime(26 + Math.random() * 10, now);
+                lfoGain.gain.setValueAtTime(42, now);
+                lfo.connect(osc.frequency);
+
+                // Filtro acústico passa-baixas ressonante
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(320, now);
+                filter.Q.setValueAtTime(5.5, now);
+
+                // Ruído branco para textura aerodinâmica (ar soprado)
+                const bufferSize = Math.floor(audioCtx.sampleRate * 0.35);
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+                const whiteNoise = audioCtx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.setValueAtTime(290, now);
+                noiseFilter.Q.setValueAtTime(3.2, now);
+
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.35, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
+
+                // Envelope de volume do oscilador
+                oscGain.gain.setValueAtTime(0.01, now);
+                oscGain.gain.linearRampToValueAtTime(0.55, now + 0.05);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.42);
+
+                // Conexões de áudio
+                lfo.start(now);
+                lfo.stop(now + 0.45);
+
+                osc.connect(filter);
+                filter.connect(oscGain);
+                oscGain.connect(audioCtx.destination);
+
+                whiteNoise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.45);
+                whiteNoise.start(now);
+                whiteNoise.stop(now + 0.35);
+            } catch (err) {
+                console.warn('Fart sound synthesis error:', err);
+            }
+        }
+
+        // ==========================================
         // 2. TEXTURAS PROCEDURAIS DETALHADAS
         // ==========================================
         function createProceduralTexture(w, h, drawFn) {
@@ -1690,30 +1787,74 @@
         ocean.receiveShadow = true;
         scene.add(ocean);
 
-        // Barreira da Tempestade / Gás Tóxico
-        let currentStormRadius = 95;
-        let targetStormRadius = 95;
-        const BARRIER_RADIUS = 100;
-        const barrierGeo = new THREE.CylinderGeometry(BARRIER_RADIUS, BARRIER_RADIUS, 90, 48, 1, true);
-        const barrierMat = new THREE.MeshBasicMaterial({
-            color: 0x9333ea,
+        // ==========================================
+        // SISTEMA ATMOSFÉRICO DE FUMAÇA / GÁS TÓXICO (ESFUMAÇADO & MÓVEL)
+        // ==========================================
+        let currentStormRadius = 135;
+        let targetStormRadius = 135;
+        let currentStormX = 0;
+        let targetStormX = 0;
+        let currentStormZ = 0;
+        let targetStormZ = 0;
+
+        // Névoa atmosférica (fog) imersiva roxa/violeta
+        scene.fog = new THREE.FogExp2(0x2e1065, 0.0035);
+
+        // Textura procedural de Nuvem de Fumaça
+        const smokeCloudTexture = createProceduralTexture(256, 256, (ctx, w, h) => {
+            const grad = ctx.createRadialGradient(w / 2, h / 2, 6, w / 2, h / 2, w / 2);
+            grad.addColorStop(0, 'rgba(168, 85, 247, 0.75)');
+            grad.addColorStop(0.35, 'rgba(126, 34, 206, 0.45)');
+            grad.addColorStop(0.7, 'rgba(88, 28, 135, 0.18)');
+            grad.addColorStop(1, 'rgba(59, 7, 100, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (let i = 0; i < 7; i++) {
+                const angle = (i / 7) * Math.PI * 2;
+                const dist = w * 0.22;
+                const px = w / 2 + Math.cos(angle) * dist;
+                const py = h / 2 + Math.sin(angle) * dist;
+                const pGrad = ctx.createRadialGradient(px, py, 4, px, py, w * 0.26);
+                pGrad.addColorStop(0, 'rgba(192, 132, 252, 0.35)');
+                pGrad.addColorStop(1, 'rgba(76, 29, 149, 0)');
+                ctx.fillStyle = pGrad;
+                ctx.beginPath();
+                ctx.arc(px, py, w * 0.26, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        // Grupo de partículas e puffs de fumaça ao redor da tempestade
+        const smokePuffsGroup = new THREE.Group();
+        scene.add(smokePuffsGroup);
+
+        const SMOKE_PUFF_COUNT = 96;
+        const smokePuffGeo = new THREE.PlaneGeometry(30, 24);
+        const smokePuffMat = new THREE.MeshBasicMaterial({
+            map: smokeCloudTexture,
             transparent: true,
-            opacity: 0.38,
+            opacity: 0.55,
+            depthWrite: false,
             side: THREE.DoubleSide
         });
-        const barrierMesh = new THREE.Mesh(barrierGeo, barrierMat);
-        barrierMesh.position.y = 35;
-        scene.add(barrierMesh);
 
-        const barrierWireMat = new THREE.MeshBasicMaterial({
-            color: 0xc084fc,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.45
-        });
-        const barrierWire = new THREE.Mesh(barrierGeo, barrierWireMat);
-        barrierWire.position.y = 35;
-        scene.add(barrierWire);
+        const smokePuffs = [];
+        for (let i = 0; i < SMOKE_PUFF_COUNT; i++) {
+            const puff = new THREE.Mesh(smokePuffGeo, smokePuffMat);
+            const baseAngle = (i / SMOKE_PUFF_COUNT) * Math.PI * 2;
+            puff.userData = {
+                angle: baseAngle,
+                rotSpeed: (Math.random() - 0.5) * 0.4,
+                scaleOsc: Math.random() * Math.PI * 2,
+                heightOffset: 4 + Math.random() * 15,
+                radialOffset: (Math.random() - 0.5) * 10
+            };
+            smokePuffsGroup.add(puff);
+            smokePuffs.push(puff);
+        }
 
         // ==========================================
         // 4. BASES DOS DOIS TIMES (AZUL E VERMELHO)
@@ -1874,6 +2015,32 @@
                 if (x + radius > b.minX && x - radius < b.maxX &&
                     z + radius > b.minZ && z - radius < b.maxZ) {
                     return true;
+                }
+            }
+            return false;
+        }
+
+        // Lista de construções dos jogadores no mundo
+        const buildMeshes = [];
+
+        // Colisão com TODAS as paredes (Labirinto de Pedra + Construções dos Players)
+        function checkAnyWallCollision(x, z, radius = 0.55) {
+            if (checkMazeCollision(x, z, radius)) return true;
+            if (typeof buildMeshes !== 'undefined') {
+                for (let i = 0; i < buildMeshes.length; i++) {
+                    const m = buildMeshes[i];
+                    if (m && m.userData && m.userData.buildType === 'wall') {
+                        const hw = 1.8;
+                        const ht = 0.45;
+                        const cos = Math.abs(Math.cos(m.rotation.y || 0));
+                        const sin = Math.abs(Math.sin(m.rotation.y || 0));
+                        const boundX = hw * sin + ht * cos;
+                        const boundZ = hw * cos + ht * sin;
+                        if (x + radius > m.position.x - boundX && x - radius < m.position.x + boundX &&
+                            z + radius > m.position.z - boundZ && z - radius < m.position.z + boundZ) {
+                            return true;
+                        }
+                    }
                 }
             }
             return false;
@@ -2527,6 +2694,13 @@
                         const hudStorm = document.getElementById('hud-storm-radius');
                         if (hudStorm) hudStorm.innerText = `${Math.round(data.stormRadius)}m`;
                     }
+                    if (data.stormX !== undefined) {
+                        currentStormX = targetStormX = data.stormX;
+                        currentStormZ = targetStormZ = data.stormZ;
+                    }
+                    if (data.botCount !== undefined) {
+                        updateBotCountUI(data.botCount);
+                    }
                 }
 
                 if (data.type === 'player_joined') {
@@ -2632,8 +2806,16 @@
 
                 if (data.type === 'storm_update') {
                     targetStormRadius = data.radius;
+                    if (data.x !== undefined) targetStormX = data.x;
+                    if (data.z !== undefined) targetStormZ = data.z;
                     const hudStorm = document.getElementById('hud-storm-radius');
                     if (hudStorm) hudStorm.innerText = `${Math.round(data.radius)}m`;
+                }
+
+                if (data.type === 'bot_count_updated') {
+                    updateBotCountUI(data.count);
+                    if (data.aliveCount !== undefined) updateAliveCount(data.aliveCount);
+                    if (data.players) updateLeaderboardUI(data.players);
                 }
 
                 if (data.type === 'round_ended') {
@@ -2788,7 +2970,6 @@
             }
         }
 
-        const buildMeshes = [];
         function spawnBuildMesh(b) {
             let geo;
             if (b.buildType === 'wall') geo = new THREE.BoxGeometry(3.5, 3.0, 0.25);
@@ -2801,6 +2982,7 @@
             if (b.rotX) mesh.rotation.x = b.rotX;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            mesh.userData = { isBuildMesh: true, buildType: b.buildType };
             scene.add(mesh);
             buildMeshes.push(mesh);
         }
@@ -2849,6 +3031,10 @@
                 targetStormRadius = data.stormRadius;
                 const hudStorm = document.getElementById('hud-storm-radius');
                 if (hudStorm) hudStorm.innerText = `${Math.round(data.stormRadius)}m`;
+            }
+            if (data.stormX !== undefined) {
+                currentStormX = targetStormX = data.stormX;
+                currentStormZ = targetStormZ = data.stormZ;
             }
 
             localStats.health = 100;
@@ -2995,6 +3181,7 @@
             });
             farmableTrees.forEach(t => targets.push(...t.children));
             targets.push(...mazeGroup.children); // Paredes do labirinto
+            targets.push(...buildMeshes); // Paredes e estruturas dos jogadores
 
             const hits = raycaster.intersectObjects(targets, true);
 
@@ -3048,6 +3235,7 @@
                 }
             });
             targets.push(...mazeGroup.children);
+            targets.push(...buildMeshes);
 
             let hitCountPerPlayer = {};
 
@@ -3281,10 +3469,72 @@
             else teamBlueOpt.click();
         }
 
+        // Controle de Quantidade de Bots
+        let selectedBotCount = 6;
+        function updateBotCountUI(count) {
+            selectedBotCount = Math.max(0, Math.min(16, parseInt(count, 10) || 0));
+            const txt = document.getElementById('bot-count-text');
+            if (txt) txt.innerText = `${selectedBotCount} Bots`;
+            document.querySelectorAll('.bot-chip-opt').forEach(chip => {
+                const bCount = parseInt(chip.getAttribute('data-bots'), 10);
+                const isSelected = (bCount === selectedBotCount);
+                chip.classList.toggle('selected', isSelected);
+                if (isSelected) {
+                    chip.style.background = '#0284c7';
+                    chip.style.borderColor = '#38bdf8';
+                    chip.style.color = '#fff';
+                } else {
+                    chip.style.background = '#1e293b';
+                    chip.style.borderColor = '#334155';
+                    chip.style.color = '#94a3b8';
+                }
+            });
+        }
+
+        const btnBotMinus = document.getElementById('btn-bot-minus');
+        const btnBotPlus = document.getElementById('btn-bot-plus');
+        if (btnBotMinus) {
+            btnBotMinus.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (selectedBotCount > 0) {
+                    updateBotCountUI(selectedBotCount - 1);
+                    if (ws && ws.readyState === 1) {
+                        ws.send(JSON.stringify({ type: 'set_bot_count', count: selectedBotCount }));
+                    }
+                }
+            });
+        }
+        if (btnBotPlus) {
+            btnBotPlus.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (selectedBotCount < 16) {
+                    updateBotCountUI(selectedBotCount + 1);
+                    if (ws && ws.readyState === 1) {
+                        ws.send(JSON.stringify({ type: 'set_bot_count', count: selectedBotCount }));
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.bot-chip-opt').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const count = parseInt(chip.getAttribute('data-bots'), 10);
+                updateBotCountUI(count);
+                if (ws && ws.readyState === 1) {
+                    ws.send(JSON.stringify({ type: 'set_bot_count', count: selectedBotCount }));
+                }
+            });
+        });
+
         // ENTRAR NO JOGO (START GAME)
         document.getElementById('join-game-btn').addEventListener('click', () => {
             const nameInput = document.getElementById('player-name-input').value.trim();
             if (nameInput) myName = nameInput;
+
+            if (ws && ws.readyState === 1) {
+                ws.send(JSON.stringify({ type: 'set_bot_count', count: selectedBotCount }));
+            }
 
             // Salva na memória do navegador
             localStorage.setItem('fn_user_name', myName);
@@ -3601,6 +3851,11 @@
         window.addEventListener('keydown', (e) => {
             keys[e.code] = true;
 
+            // Barulho cômico de peido ao pressionar a tecla S
+            if (e.code === 'KeyS' && !e.repeat) {
+                playFartSound();
+            }
+
             if (e.code === 'Tab') {
                 e.preventDefault();
                 toggleLeaderboard(true);
@@ -3696,10 +3951,6 @@
             if (redBase && redBase.children[3]) redBase.children[3].rotation.y += dt * 0.8;
             if (centralChest) centralChest.rotation.y += dt * 0.5;
 
-            // Rotação suave da Barreira da Tempestade
-            barrierMesh.rotation.y += dt * 0.04;
-            barrierWire.rotation.y -= dt * 0.02;
-
             // Partículas
             for (let i = activeParticles.length - 1; i >= 0; i--) {
                 const p = activeParticles[i];
@@ -3734,7 +3985,7 @@
 
                 const groundY = getGroundHeight(r.mesh.position.x, r.mesh.position.z);
                 const hitGround = (r.mesh.position.y <= groundY + 0.2);
-                const hitWall = checkMazeCollision(r.mesh.position.x, r.mesh.position.z, 0.4);
+                const hitWall = checkAnyWallCollision(r.mesh.position.x, r.mesh.position.z, 0.45);
                 const maxRange = (r.traveled > 90);
 
                 if (hitGround || hitWall || maxRange) {
@@ -3808,11 +4059,11 @@
                         const nextX = localPlayer.position.x + moveVec.x * speed * dt;
                         const nextZ = localPlayer.position.z + moveVec.z * speed * dt;
 
-                        // COLISÃO COM AS PAREDES DO LABIRINTO (NÃO ATRAVESSA PAREDES!)
-                        if (!checkMazeCollision(nextX, localPlayer.position.z)) {
+                        // COLISÃO COM TODAS AS PAREDES (NÃO ATRAVESSA PAREDES!)
+                        if (!checkAnyWallCollision(nextX, localPlayer.position.z)) {
                             localPlayer.position.x = nextX;
                         }
-                        if (!checkMazeCollision(localPlayer.position.x, nextZ)) {
+                        if (!checkAnyWallCollision(localPlayer.position.x, nextZ)) {
                             localPlayer.position.z = nextZ;
                         }
                     }
@@ -3824,8 +4075,9 @@
                         localPlayer.position.z = (localPlayer.position.z / playerDist) * 115;
                     }
 
-                    // AVISO E EFEITO VISUAL DE GÁS TÓXICO / TEMPESTADE
-                    const inToxicGas = (playerDist > currentStormRadius);
+                    // AVISO E EFEITO VISUAL DE GÁS TÓXICO / TEMPESTADE (RELATIVO AO CENTRO MÓVEL)
+                    const distToStormCenter = Math.hypot(localPlayer.position.x - currentStormX, localPlayer.position.z - currentStormZ);
+                    const inToxicGas = (distToStormCenter > currentStormRadius);
                     const gasOverlay = document.getElementById('toxic-gas-overlay');
                     const gasWarning = document.getElementById('toxic-gas-warning');
                     if (gasOverlay) gasOverlay.style.display = inToxicGas ? 'block' : 'none';
@@ -3957,11 +4209,43 @@
                     }
                 }
 
-            // Sincronização visual da barreira da tempestade (Gás Tóxico encolhendo)
+            // Sincronização visual da fumaça / névoa tóxica (esfumaçado orgânico e móvel)
             currentStormRadius = THREE.MathUtils.lerp(currentStormRadius, targetStormRadius, 0.08);
-            const stormScale = Math.max(0.01, currentStormRadius / 100);
-            barrierMesh.scale.set(stormScale, 1, stormScale);
-            barrierWire.scale.set(stormScale, 1, stormScale);
+            currentStormX = THREE.MathUtils.lerp(currentStormX, targetStormX, 0.08);
+            currentStormZ = THREE.MathUtils.lerp(currentStormZ, targetStormZ, 0.08);
+
+            smokePuffsGroup.position.set(currentStormX, 0, currentStormZ);
+
+            for (let i = 0; i < smokePuffs.length; i++) {
+                const puff = smokePuffs[i];
+                puff.userData.scaleOsc += dt * 0.8;
+                puff.rotation.z += puff.userData.rotSpeed * dt;
+
+                const r = currentStormRadius + puff.userData.radialOffset;
+                const px = Math.cos(puff.userData.angle) * r;
+                const pz = Math.sin(puff.userData.angle) * r;
+                const gy = getGroundHeight(currentStormX + px, currentStormZ + pz);
+
+                puff.position.set(px, gy + puff.userData.heightOffset, pz);
+                puff.lookAt(camera.position.x, puff.position.y, camera.position.z);
+            }
+
+            // Efeito visual dinâmico de névoa e toxicidade na tela
+            if (localPlayer) {
+                const pDist = Math.hypot(localPlayer.position.x - currentStormX, localPlayer.position.z - currentStormZ);
+                const isInGas = (pDist > currentStormRadius);
+
+                if (isInGas) {
+                    const depth = Math.min(1.0, (pDist - currentStormRadius) / 25);
+                    scene.fog.density = THREE.MathUtils.lerp(scene.fog.density, 0.022 + depth * 0.035, 0.08);
+                    scene.fog.color.setHex(0x3b0764);
+                } else if (pDist > currentStormRadius - 15) {
+                    const factor = (15 - (currentStormRadius - pDist)) / 15;
+                    scene.fog.density = THREE.MathUtils.lerp(scene.fog.density, 0.0035 + factor * 0.012, 0.08);
+                } else {
+                    scene.fog.density = THREE.MathUtils.lerp(scene.fog.density, 0.0035, 0.05);
+                }
+            }
 
             // Interpolação suave dos outros jogadores remotos e bots com fixação precisa no chão
             remotePlayers.forEach(rp => {

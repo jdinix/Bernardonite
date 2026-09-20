@@ -150,15 +150,110 @@ function getGroundSpawnForTeam(team) {
 }
 
 // ==========================================
-// SISTEMA DE TEMPESTADE / GÁS TÓXICO
+// LABIRINTO & COLISÕES FÍSICAS NO SERVIDOR (PAREDES IMPENETRÁVEIS)
 // ==========================================
-const stormState = {
-    radius: 95,
-    minRadius: 8,
-    shrinkSpeed: 0.32, // encolhe ~0.32m por segundo
-    lastUpdate: Date.now(),
-    lastDmgTick: Date.now()
-};
+const MAZE_GRID = [
+    [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], // Portões Leste e Oeste
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1]  // Portões Norte e Sul
+];
+
+const CELL_SIZE = 3.8;
+const WALL_THICKNESS = 0.7;
+const GRID_ROWS = MAZE_GRID.length;
+const GRID_COLS = MAZE_GRID[0].length;
+const OFFSET_X = -((GRID_COLS * CELL_SIZE) / 2);
+const OFFSET_Z = -((GRID_ROWS * CELL_SIZE) / 2);
+
+const mazeColliders = [];
+for (let r = 0; r < GRID_ROWS; r++) {
+    for (let c = 0; c < GRID_COLS; c++) {
+        if (MAZE_GRID[r][c] === 1) {
+            const wx = OFFSET_X + c * CELL_SIZE + CELL_SIZE / 2;
+            const wz = OFFSET_Z + r * CELL_SIZE + CELL_SIZE / 2;
+            mazeColliders.push({
+                minX: wx - CELL_SIZE / 2,
+                maxX: wx + CELL_SIZE / 2,
+                minZ: wz - WALL_THICKNESS / 2,
+                maxZ: wz + WALL_THICKNESS / 2
+            });
+        }
+    }
+}
+
+function checkWallCollision(x, z, radius = 0.55) {
+    // 1. Paredes do Labirinto
+    for (let i = 0; i < mazeColliders.length; i++) {
+        const b = mazeColliders[i];
+        if (x + radius > b.minX && x - radius < b.maxX &&
+            z + radius > b.minZ && z - radius < b.maxZ) {
+            return true;
+        }
+    }
+    // 2. Paredes e estruturas construídas por jogadores
+    for (let i = 0; i < worldBuilds.length; i++) {
+        const b = worldBuilds[i];
+        if (b.buildType === 'wall') {
+            const hw = 1.8;
+            const ht = 0.45;
+            const cos = Math.abs(Math.cos(b.rotY || 0));
+            const sin = Math.abs(Math.sin(b.rotY || 0));
+            const boundX = hw * sin + ht * cos;
+            const boundZ = hw * cos + ht * sin;
+            if (x + radius > b.x - boundX && x - radius < b.x + boundX &&
+                z + radius > b.z - boundZ && z - radius < b.z + boundZ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// Linha de visão para impedir tiros através de paredes
+function isLineOfSightBlocked(x1, z1, x2, z2) {
+    const dist = Math.hypot(x2 - x1, z2 - z1);
+    if (dist < 0.5) return false;
+    const steps = Math.ceil(dist / 0.75);
+    const dx = (x2 - x1) / steps;
+    const dz = (z2 - z1) / steps;
+    for (let s = 1; s < steps; s++) {
+        const testX = x1 + dx * s;
+        const testZ = z1 + dz * s;
+        if (checkWallCollision(testX, testZ, 0.32)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ==========================================
+// SISTEMA DE TEMPESTADE / GÁS TÓXICO (ESFUMAÇADO & MÓVEL)
+// ==========================================
+function createNewStormState() {
+    return {
+        x: 0,
+        z: 0,
+        targetX: (Math.random() - 0.5) * 55, // Centro aleatório da zona segura na ilha
+        targetZ: (Math.random() - 0.5) * 55,
+        radius: 135, // Começa fora do mapa (fora dos limites da ilha)
+        minRadius: 8,
+        shrinkSpeed: 0.35, // encolhe ~0.35m por segundo
+        lastUpdate: Date.now(),
+        lastDmgTick: Date.now()
+    };
+}
+
+let stormState = createNewStormState();
 
 let isRoundResetting = false;
 
@@ -179,9 +274,7 @@ function resetRound(winningTeam) {
         teamScores.blue = 0;
         teamScores.red = 0;
         worldBuilds.length = 0;
-        stormState.radius = 95;
-        stormState.lastUpdate = Date.now();
-        stormState.lastDmgTick = Date.now();
+        stormState = createNewStormState();
 
         players.forEach(p => {
             const spawn = getGroundSpawnForTeam(p.team);
@@ -197,12 +290,14 @@ function resetRound(winningTeam) {
         });
 
         isRoundResetting = false;
-        console.log(`🔥 [NOVA RODADA] Ilha, construções e placares totalmente reiniciados!`);
+        console.log(`🔥 [NOVA RODADA] Ilha, construções, tempestade e placares totalmente reiniciados!`);
 
         broadcast({
             type: 'round_restarted',
             teamScores: teamScores,
             stormRadius: stormState.radius,
+            stormX: stormState.x,
+            stormZ: stormState.z,
             builds: [],
             players: getPlayerList()
         });
@@ -215,25 +310,30 @@ function updateStorm() {
     const dt = Math.min((now - stormState.lastUpdate) / 1000, 1.0);
     stormState.lastUpdate = now;
 
-    // Encolhe a tempestade progressivamente
+    // Encolhe a tempestade e desloca centro para posição alvo aleatória
     if (players.size > 0 && stormState.radius > stormState.minRadius) {
         stormState.radius = Math.max(stormState.minRadius, stormState.radius - stormState.shrinkSpeed * dt);
+        const progress = Math.min(1.0, (135 - stormState.radius) / (135 - stormState.minRadius));
+        stormState.x = stormState.targetX * progress;
+        stormState.z = stormState.targetZ * progress;
     }
 
-    // Broadcast periódico do raio da tempestade
+    // Broadcast periódico do raio e centro da tempestade
     broadcast({
         type: 'storm_update',
-        radius: stormState.radius
+        radius: stormState.radius,
+        x: stormState.x,
+        z: stormState.z
     });
 
     // Dano de gás tóxico a cada 1 segundo em quem estiver fora do raio seguro
     if (now - stormState.lastDmgTick >= 1000) {
         stormState.lastDmgTick = now;
-        const stormDamage = Math.max(5, Math.floor(14 - (stormState.radius / 9)));
+        const stormDamage = Math.max(5, Math.floor(14 - (stormState.radius / 10)));
 
         players.forEach(p => {
             if (!p.isAlive) return;
-            const dist = Math.hypot(p.x, p.z);
+            const dist = Math.hypot(p.x - stormState.x, p.z - stormState.z);
             if (dist > stormState.radius) {
                 // Dano direto na vida pelo gás tóxico
                 p.hp = Math.max(0, p.hp - stormDamage);
@@ -353,7 +453,10 @@ wss.on('connection', (ws) => {
                     aliveCount: getAliveCount(),
                     teamScores: teamScores,
                     targetKills: TARGET_TEAM_KILLS,
-                    stormRadius: stormState.radius
+                    stormRadius: stormState.radius,
+                    stormX: stormState.x,
+                    stormZ: stormState.z,
+                    botCount: targetBotCount
                 }));
 
                 // Avisa todos os outros
@@ -383,6 +486,13 @@ wss.on('connection', (ws) => {
             }
 
             if (!myPlayer) return;
+
+            // ==========================================
+            // AJUSTE DINÂMICO DA QUANTIDADE DE BOTS
+            // ==========================================
+            if (data.type === 'set_bot_count') {
+                setBotCount(data.count);
+            }
 
             // ==========================================
             // MOVIMENTO
@@ -452,6 +562,11 @@ wss.on('connection', (ws) => {
                 if (!target || !target.isAlive || target.hp <= 0) return;
                 if (target.team === myPlayer.team) {
                     // Mesmo time: sem fogo amigo!
+                    return;
+                }
+
+                // TIRO NÃO ATRAVESSA PAREDES (NADA ATRAVESSA PAREDE!)
+                if (isLineOfSightBlocked(myPlayer.x, myPlayer.z, target.x, target.z)) {
                     return;
                 }
 
@@ -619,50 +734,134 @@ wss.on('connection', (ws) => {
 });
 
 // ==========================================
-// SISTEMA INTELIGENTE DE BOTS (IA COMBATE & TIMES)
+// SISTEMA INTELIGENTE DE BOTS (POOL DINÂMICO & IA)
 // ==========================================
-const BOTS_CONFIG = [
+const ALL_BOTS_POOL = [
     { id: 'BOT_1', name: 'Bot João', team: 'blue', color: '#2563eb' },
     { id: 'BOT_2', name: 'Bot Carol', team: 'blue', color: '#3b82f6' },
     { id: 'BOT_3', name: 'Bot Sophia', team: 'blue', color: '#0284c7' },
-    { id: 'BOT_4', name: 'Bot Diniz', team: 'red', color: '#dc2626' },
-    { id: 'BOT_5', name: 'Bot Conrado', team: 'red', color: '#ef4444' },
-    { id: 'BOT_6', name: 'Bot Joãoz', team: 'red', color: '#b91c1c' }
+    { id: 'BOT_4', name: 'Bot Leo', team: 'blue', color: '#06b6d4' },
+    { id: 'BOT_5', name: 'Bot Lucas', team: 'blue', color: '#38bdf8' },
+    { id: 'BOT_6', name: 'Bot Arthur', team: 'blue', color: '#60a5fa' },
+    { id: 'BOT_7', name: 'Bot Gabriel', team: 'blue', color: '#1d4ed8' },
+    { id: 'BOT_8', name: 'Bot Enzo', team: 'blue', color: '#0369a1' },
+    { id: 'BOT_9', name: 'Bot Diniz', team: 'red', color: '#dc2626' },
+    { id: 'BOT_10', name: 'Bot Conrado', team: 'red', color: '#ef4444' },
+    { id: 'BOT_11', name: 'Bot Joãoz', team: 'red', color: '#b91c1c' },
+    { id: 'BOT_12', name: 'Bot Miguel', team: 'red', color: '#f87171' },
+    { id: 'BOT_13', name: 'Bot Davi', team: 'red', color: '#e11d48' },
+    { id: 'BOT_14', name: 'Bot Heitor', team: 'red', color: '#be123c' },
+    { id: 'BOT_15', name: 'Bot Matheus', team: 'red', color: '#f43f5e' },
+    { id: 'BOT_16', name: 'Bot Pedro', team: 'red', color: '#991b1b' }
 ];
 
+let targetBotCount = 6;
+const activeBotsList = [];
 const botStates = new Map();
 
-function initBots() {
-    BOTS_CONFIG.forEach(cfg => {
-        const spawn = getGroundSpawnForTeam(cfg.team);
-        const botPlayer = {
-            id: cfg.id,
-            ws: null,
-            name: cfg.name,
-            team: cfg.team,
-            skinColor: cfg.color,
-            x: spawn.x,
-            y: spawn.y,
-            z: spawn.z,
-            yaw: cfg.team === 'red' ? Math.PI : 0,
-            hp: 100,
-            shield: 100,
-            kills: 0,
-            deaths: 0,
-            isGliding: false,
-            isAlive: true,
-            isBot: true
-        };
-        players.set(cfg.id, botPlayer);
+function setBotCount(count) {
+    targetBotCount = Math.max(0, Math.min(16, parseInt(count, 10) || 0));
 
-        botStates.set(cfg.id, {
-            respawnTime: 0,
-            nextShootTime: Date.now() + 2000 + Math.random() * 2000,
-            patrolAngle: Math.random() * Math.PI * 2,
-            patrolRadius: 15 + Math.random() * 30
-        });
+    const blueCount = Math.ceil(targetBotCount / 2);
+    const redCount = Math.floor(targetBotCount / 2);
+
+    const needed = [];
+    for (let i = 0; i < blueCount; i++) {
+        needed.push(ALL_BOTS_POOL[i]);
+    }
+    for (let i = 0; i < redCount; i++) {
+        needed.push(ALL_BOTS_POOL[8 + i]);
+    }
+
+    const neededIds = new Set(needed.map(b => b.id));
+
+    // Remove bots excedentes
+    for (let i = activeBotsList.length - 1; i >= 0; i--) {
+        const b = activeBotsList[i];
+        if (!neededIds.has(b.id)) {
+            players.delete(b.id);
+            botStates.delete(b.id);
+            activeBotsList.splice(i, 1);
+            broadcast({
+                type: 'player_left',
+                id: b.id,
+                name: b.name,
+                aliveCount: getAliveCount(),
+                teamScores: teamScores,
+                players: getPlayerList()
+            });
+        }
+    }
+
+    // Adiciona novos bots necessários
+    const currentActiveIds = new Set(activeBotsList.map(b => b.id));
+    needed.forEach(cfg => {
+        if (!currentActiveIds.has(cfg.id)) {
+            const spawn = getGroundSpawnForTeam(cfg.team);
+            const botPlayer = {
+                id: cfg.id,
+                ws: null,
+                name: cfg.name,
+                team: cfg.team,
+                skinColor: cfg.color,
+                x: spawn.x,
+                y: spawn.y,
+                z: spawn.z,
+                yaw: cfg.team === 'red' ? Math.PI : 0,
+                hp: 100,
+                shield: 100,
+                kills: 0,
+                deaths: 0,
+                isGliding: false,
+                isAlive: true,
+                isBot: true
+            };
+            players.set(cfg.id, botPlayer);
+
+            botStates.set(cfg.id, {
+                respawnTime: 0,
+                nextShootTime: Date.now() + 2000 + Math.random() * 2000,
+                patrolAngle: Math.random() * Math.PI * 2,
+                patrolRadius: 15 + Math.random() * 30
+            });
+            activeBotsList.push(cfg);
+
+            broadcast({
+                type: 'player_joined',
+                player: {
+                    id: botPlayer.id,
+                    name: botPlayer.name,
+                    team: botPlayer.team,
+                    skinColor: botPlayer.skinColor,
+                    x: botPlayer.x,
+                    y: botPlayer.y,
+                    z: botPlayer.z,
+                    yaw: botPlayer.yaw,
+                    hp: botPlayer.hp,
+                    shield: botPlayer.shield,
+                    kills: botPlayer.kills,
+                    deaths: botPlayer.deaths,
+                    isGliding: botPlayer.isGliding,
+                    isAlive: botPlayer.isAlive
+                },
+                aliveCount: getAliveCount(),
+                teamScores: teamScores
+            });
+        }
     });
-    console.log(`🤖 ${BOTS_CONFIG.length} Bots Inteligentes inicializados no mapa (3 Azul / 3 Vermelho)!`);
+
+    broadcast({
+        type: 'bot_count_updated',
+        count: targetBotCount,
+        players: getPlayerList(),
+        aliveCount: getAliveCount()
+    });
+    console.log(`🤖 Contagem de Bots atualizada para: ${targetBotCount} (Azul: ${blueCount}, Vermelho: ${redCount})`);
+}
+
+function initBots() {
+    setBotCount(targetBotCount);
+    console.log(`🤖 ${activeBotsList.length} Bots Inteligentes inicializados no mapa!`);
 }
 
 let lastBotTick = Date.now();
@@ -682,7 +881,7 @@ function updateBots() {
     }
     if (!humanConnected) return;
 
-    BOTS_CONFIG.forEach(cfg => {
+    activeBotsList.forEach(cfg => {
         const bot = players.get(cfg.id);
         const state = botStates.get(cfg.id);
         if (!bot || !state) return;
@@ -733,31 +932,36 @@ function updateBots() {
         let isMoving = false;
 
         if (target) {
-            // Rotaciona para mirar de frente para o adversário
+            // Verifica se a linha de visão está bloqueada por paredes
+            const losBlocked = isLineOfSightBlocked(bot.x, bot.z, target.x, target.z);
+
             const dx = target.x - bot.x;
             const dz = target.z - bot.z;
             bot.yaw = Math.atan2(dx, dz) + Math.PI;
 
-            // Se estiver a mais de 8 metros, avança em combate
+            // Movimento com COLISÃO COM PAREDES (NEM BOT ATRAVESSA PAREDE!)
             if (closestDist > 8.5) {
                 const speed = 7.5;
                 const dirX = Math.sin(bot.yaw - Math.PI);
                 const dirZ = Math.cos(bot.yaw - Math.PI);
-                bot.x += dirX * speed * dt;
-                bot.z += dirZ * speed * dt;
+                const nextX = bot.x + dirX * speed * dt;
+                const nextZ = bot.z + dirZ * speed * dt;
+                if (!checkWallCollision(nextX, bot.z)) bot.x = nextX;
+                if (!checkWallCollision(bot.x, nextZ)) bot.z = nextZ;
                 isMoving = true;
             } else if (closestDist < 5.0) {
-                // Se estiver colado, recua estrategicamente
                 const speed = 4.0;
                 const dirX = Math.sin(bot.yaw);
                 const dirZ = Math.cos(bot.yaw);
-                bot.x += dirX * speed * dt;
-                bot.z += dirZ * speed * dt;
+                const nextX = bot.x + dirX * speed * dt;
+                const nextZ = bot.z + dirZ * speed * dt;
+                if (!checkWallCollision(nextX, bot.z)) bot.x = nextX;
+                if (!checkWallCollision(bot.x, nextZ)) bot.z = nextZ;
                 isMoving = true;
             }
 
-            // Disparos táticos
-            if (now > state.nextShootTime) {
+            // Disparos táticos APENAS se a linha de visão NÃO estiver bloqueada por parede!
+            if (!losBlocked && now > state.nextShootTime) {
                 state.nextShootTime = now + 1400 + Math.random() * 1200;
 
                 const origin = { x: bot.x, y: bot.y + 1.4, z: bot.z };
@@ -853,7 +1057,7 @@ function updateBots() {
                 }
             }
         } else {
-            // Patrulha pela ilha
+            // Patrulha pela ilha com detecção de paredes
             state.patrolAngle += 0.5 * dt;
             const targetX = Math.cos(state.patrolAngle) * state.patrolRadius;
             const targetZ = Math.sin(state.patrolAngle) * state.patrolRadius;
@@ -865,20 +1069,28 @@ function updateBots() {
             if (dist > 2.0) {
                 bot.yaw = Math.atan2(dx, dz) + Math.PI;
                 const speed = 5.2;
-                bot.x += (dx / dist) * speed * dt;
-                bot.z += (dz / dist) * speed * dt;
+                const dirX = dx / dist;
+                const dirZ = dz / dist;
+                const nextX = bot.x + dirX * speed * dt;
+                const nextZ = bot.z + dirZ * speed * dt;
+                if (!checkWallCollision(nextX, bot.z)) bot.x = nextX;
+                if (!checkWallCollision(bot.x, nextZ)) bot.z = nextZ;
                 isMoving = true;
             }
         }
 
-        // Fuga do gás tóxico: se o bot estiver no gás ou perto da tempestade, corre em direção ao centro seguro
-        const botDist = Math.hypot(bot.x, bot.z);
-        if (botDist > Math.max(8.0, stormState.radius - 6.0)) {
-            const angleToCenter = Math.atan2(-bot.x, -bot.z);
+        // Fuga do gás tóxico: corre em direção ao centro seguro (stormState.x, stormState.z)
+        const distToStormCenter = Math.hypot(bot.x - stormState.x, bot.z - stormState.z);
+        if (distToStormCenter > Math.max(8.0, stormState.radius - 6.0)) {
+            const angleToCenter = Math.atan2(stormState.x - bot.x, stormState.z - bot.z);
             bot.yaw = angleToCenter + Math.PI;
             const speed = 7.5;
-            bot.x += Math.sin(angleToCenter) * speed * dt;
-            bot.z += Math.cos(angleToCenter) * speed * dt;
+            const dirX = Math.sin(angleToCenter);
+            const dirZ = Math.cos(angleToCenter);
+            const nextX = bot.x + dirX * speed * dt;
+            const nextZ = bot.z + dirZ * speed * dt;
+            if (!checkWallCollision(nextX, bot.z)) bot.x = nextX;
+            if (!checkWallCollision(bot.x, nextZ)) bot.z = nextZ;
             isMoving = true;
         }
 
@@ -911,5 +1123,5 @@ setInterval(updateBots, 100);
 initBots();
 
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🎮 Servidor Fortnite Battle Royale pronto na porta ${PORT}`);
+    console.log(`🎮 Servidor Bernardonite pronto na porta ${PORT}`);
 });
