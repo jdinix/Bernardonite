@@ -5,7 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bernardonite</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* Ícones Lucide SVG */
+        .lucide {
+            width: 1.15em;
+            height: 1.15em;
+            display: inline-block;
+            vertical-align: -0.22em;
+            stroke-width: 2.2;
+        }
+
+        /* Flashbang Blinding Overlay */
+        #flashbang-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ffffff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 170;
+            transition: opacity 0.05s ease-in;
+        }
+
+        /* Slots de Granadas */
+        .slot.grenade-he { border-color: #f97316; background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(15, 23, 42, 0.9)); }
+        .slot.grenade-flash { border-color: #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(15, 23, 42, 0.9)); }
+        .slot.grenade-smoke { border-color: #94a3b8; background: linear-gradient(135deg, rgba(148, 163, 184, 0.25), rgba(15, 23, 42, 0.9)); }
+
+        /* Cartões do Navegador de Salas */
+        .room-card-item {
+            background: rgba(30, 41, 59, 0.85);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .room-card-item:hover {
+            border-color: #38bdf8;
+            background: rgba(30, 41, 59, 0.98);
+        }
+        .room-card-item.selected-room {
+            border-color: #38bdf8;
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.35), rgba(15, 23, 42, 0.9));
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+        .room-card-title {
+            font-size: 13px;
+            font-weight: 900;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .room-card-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 700;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
         * {
             margin: 0;
             padding: 0;
@@ -905,7 +973,7 @@
             font-weight: 800;
         }
 
-        /* OVERLAYS E ALERTA DE GÁS TÓXICO / TEMPESTADE */
+        /* OVERLAYS E ALERTA DE GÁS TÓXICO */
         #toxic-gas-overlay {
             position: fixed;
             top: 0;
@@ -942,7 +1010,7 @@
             text-align: center;
         }
 
-        /* CONTROLES MOBILE TOUCH (JOYSTICK + BOTÕES) */
+        /* CONTROLES MOBILE TOUCH (ERGONÔMICO, ZERO SOBREPOSIÇÃO & TELA CHEIA) */
         #mobile-controls-container {
             position: fixed;
             top: 0;
@@ -956,14 +1024,14 @@
 
         #mobile-joystick-base {
             position: absolute;
-            bottom: 30px;
-            left: 25px;
+            bottom: 24px;
+            left: 24px;
             width: 130px;
             height: 130px;
             border-radius: 50%;
-            background: rgba(15, 23, 42, 0.65);
-            border: 2px solid rgba(56, 189, 248, 0.5);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            background: rgba(15, 23, 42, 0.7);
+            border: 2px solid rgba(56, 189, 248, 0.55);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.65);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -983,12 +1051,67 @@
             transition: transform 0.05s ease-out;
         }
 
+        /* Botão de Sprint posicionado ergonomicamente logo acima do analógico */
+        #btn-mobile-sprint {
+            position: absolute;
+            bottom: 168px;
+            left: 64px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+            color: #ffffff;
+            font-size: 20px;
+            cursor: pointer;
+            pointer-events: auto;
+            touch-action: none;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+        #btn-mobile-sprint:active { transform: scale(0.92); }
+
+        /* Barra Superior Direita Mobile (Tela Cheia + Câmera) */
+        #mobile-top-bar {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+            z-index: 125;
+        }
+
+        .mobile-top-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid #38bdf8;
+            color: #ffffff;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            touch-action: none;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        .mobile-top-btn:active { transform: scale(0.92); }
+
+        /* Cluster de Ação Inferior Direito - Espaçado e Sem Nenhuma Sobreposição */
         #mobile-action-buttons {
             position: absolute;
-            bottom: 25px;
-            right: 20px;
-            width: 220px;
-            height: 220px;
+            bottom: 0;
+            right: 0;
+            width: 240px;
+            height: 240px;
             pointer-events: none;
         }
 
@@ -998,7 +1121,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 900;
             color: #ffffff;
             cursor: pointer;
@@ -1007,65 +1130,55 @@
             user-select: none;
             transition: transform 0.1s, filter 0.1s;
         }
-
         .mobile-btn:active {
             transform: scale(0.90);
             filter: brightness(1.25);
         }
 
+        /* Botão de Tiro (Grande, Primário) */
         #btn-mobile-fire {
-            bottom: 8px;
-            right: 8px;
-            width: 74px;
-            height: 74px;
+            bottom: 22px;
+            right: 22px;
+            width: 76px;
+            height: 76px;
             background: radial-gradient(circle, #ef4444 0%, #b91c1c 100%);
             border: 3px solid #fecaca;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.85);
-            font-size: 32px;
+            box-shadow: 0 0 22px rgba(239, 68, 68, 0.85);
+            font-size: 28px;
         }
 
+        /* Botão de Pulo (Acima do Tiro) */
         #btn-mobile-jump {
-            bottom: 96px;
-            right: 12px;
-            width: 56px;
-            height: 56px;
-            background: rgba(30, 41, 59, 0.9);
+            bottom: 116px;
+            right: 22px;
+            width: 52px;
+            height: 52px;
+            background: rgba(30, 41, 59, 0.92);
             border: 2px solid #38bdf8;
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
-            font-size: 26px;
         }
 
+        /* Botão de Granada (À esquerda do Pulo) */
+        #btn-mobile-grenade {
+            bottom: 116px;
+            right: 92px;
+            width: 52px;
+            height: 52px;
+            background: rgba(30, 41, 59, 0.92);
+            border: 2px solid #f97316;
+            box-shadow: 0 0 12px rgba(249, 115, 22, 0.6);
+            color: #fed7aa;
+        }
+
+        /* Botão de Construção (À esquerda do Tiro) */
         #btn-mobile-build {
-            bottom: 12px;
-            right: 96px;
-            width: 56px;
-            height: 56px;
-            background: rgba(30, 41, 59, 0.9);
+            bottom: 22px;
+            right: 116px;
+            width: 52px;
+            height: 52px;
+            background: rgba(30, 41, 59, 0.92);
             border: 2px solid #f59e0b;
             box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
-            font-size: 26px;
-        }
-
-        #btn-mobile-sprint {
-            bottom: 92px;
-            right: 86px;
-            width: 50px;
-            height: 50px;
-            background: rgba(30, 41, 59, 0.9);
-            border: 2px solid #10b981;
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
-            font-size: 22px;
-        }
-
-        #btn-mobile-cam {
-            bottom: 160px;
-            right: 36px;
-            width: 46px;
-            height: 46px;
-            background: rgba(30, 41, 59, 0.9);
-            border: 2px solid #c084fc;
-            box-shadow: 0 0 12px rgba(192, 132, 252, 0.6);
-            font-size: 20px;
         }
 
         /* Suporte Mobile e Telas Menores */
@@ -1073,39 +1186,96 @@
             #mobile-controls-container.active-game {
                 display: block !important;
             }
-            .build-menu, .quick-action-bar {
-                display: none !important; /* No mobile usamos botões de ação dedicados */
+            .build-menu, .quick-action-bar, #btn-top-respawn {
+                display: none !important;
             }
             .weapon-hud {
                 right: auto !important;
                 left: 50% !important;
-                bottom: 120px !important;
-                transform: translateX(-50%) scale(0.68) !important;
+                bottom: 220px !important;
+                transform: translateX(-50%) scale(0.55) !important;
                 transform-origin: bottom center !important;
                 align-items: center !important;
                 z-index: 115;
             }
-            .top-hud {
-                top: 8px;
-                right: 8px;
-                gap: 4px;
-                transform: scale(0.80);
-                transform-origin: top right;
+            .team-scoreboard-container {
+                top: 6px !important;
+                left: 50% !important;
+                transform: translateX(-50%) scale(0.74) !important;
+                z-index: 60;
             }
-            .target-score-wrapper {
-                top: 8px;
-                transform: translateX(-50%) scale(0.80);
+            #mobile-top-bar {
+                top: 6px !important;
+                right: 6px !important;
+                gap: 6px !important;
+                z-index: 130;
+            }
+            .mobile-top-btn {
+                width: 38px !important;
+                height: 38px !important;
+                font-size: 16px !important;
+            }
+            .top-hud {
+                top: 56px !important;
+                right: auto !important;
+                left: 50% !important;
+                transform: translateX(-50%) scale(0.72) !important;
+                transform-origin: top center !important;
+                gap: 4px !important;
+                z-index: 55;
             }
             .player-status {
-                top: 65px;
-                left: 8px;
-                bottom: auto;
-                transform: scale(0.75);
-                transform-origin: top left;
+                top: 96px !important;
+                left: 6px !important;
+                bottom: auto !important;
+                transform: scale(0.68) !important;
+                transform-origin: top left !important;
+                z-index: 50;
+            }
+            #mobile-joystick-base {
+                bottom: 16px !important;
+                left: 16px !important;
+                width: 120px !important;
+                height: 120px !important;
+            }
+            #btn-mobile-sprint {
+                bottom: 146px !important;
+                left: 54px !important;
+                width: 44px !important;
+                height: 44px !important;
+            }
+            #mobile-action-buttons {
+                width: 210px !important;
+                height: 210px !important;
+            }
+            #btn-mobile-fire {
+                bottom: 14px !important;
+                right: 14px !important;
+                width: 68px !important;
+                height: 68px !important;
+                font-size: 24px !important;
+            }
+            #btn-mobile-jump {
+                bottom: 94px !important;
+                right: 14px !important;
+                width: 48px !important;
+                height: 48px !important;
+            }
+            #btn-mobile-grenade {
+                bottom: 94px !important;
+                right: 74px !important;
+                width: 48px !important;
+                height: 48px !important;
+            }
+            #btn-mobile-build {
+                bottom: 14px !important;
+                right: 94px !important;
+                width: 48px !important;
+                height: 48px !important;
             }
             .lobby-box {
-                max-width: 94vw;
-                padding: 20px 15px;
+                max-width: 95vw;
+                padding: 18px 14px;
             }
         }
     </style>
@@ -1124,23 +1294,26 @@
     <div id="game-toast"></div>
     <div id="kill-feed"></div>
 
+    <!-- FLASHBANG BLINDING OVERLAY -->
+    <div id="flashbang-overlay"></div>
+
     <!-- HUD ESPECTADOR -->
     <div id="spectator-hud">
-        <span>👁️ MODO ESPECTADOR: WASD (Voar), Espaço (Subir), Shift (Descer)</span>
-        <button id="btn-spectator-respawn" style="background: linear-gradient(135deg, #facc15, #f59e0b); color: #0f172a; font-weight: 900; font-size: 13px; padding: 6px 16px; border-radius: 20px; border: none; cursor: pointer; box-shadow: 0 0 15px rgba(250, 204, 21, 0.6);">🪂 RENASCER NO CHÃO (R)</button>
+        <span><i data-lucide="eye"></i> MODO ESPECTADOR: WASD (Voar), Espaço (Subir), Shift (Descer)</span>
+        <button id="btn-spectator-respawn" style="background: linear-gradient(135deg, #facc15, #f59e0b); color: #0f172a; font-weight: 900; font-size: 13px; padding: 6px 16px; border-radius: 20px; border: none; cursor: pointer; box-shadow: 0 0 15px rgba(250, 204, 21, 0.6); display: flex; align-items: center; gap: 6px;"><i data-lucide="rotate-ccw"></i> RENASCER NO CHÃO (R)</button>
     </div>
 
     <!-- PLACAR DE TIMES CENTRAL (TOP CENTER) -->
     <div class="team-scoreboard-container">
         <div class="team-score-hud">
             <div class="team-badge team-blue-badge">
-                <span>🔵</span> TIME AZUL
+                <i data-lucide="shield" style="color: #38bdf8;"></i> TIME AZUL
                 <span class="team-score-num" id="score-blue">0</span>
             </div>
             <div class="score-vs">VS</div>
             <div class="team-badge team-red-badge">
                 <span class="team-score-num" id="score-red">0</span>
-                TIME VERMELHO <span>🔴</span>
+                TIME VERMELHO <i data-lucide="shield" style="color: #ef4444;"></i>
             </div>
         </div>
         <div class="target-goal-bar">
@@ -1153,31 +1326,31 @@
     <!-- HUD SUPERIOR DIREITO -->
     <div class="top-hud">
         <button id="btn-top-respawn" class="stat-badge btn-respawn-action" title="Renascer seu personagem no chão da base do seu time">
-            <span>🔄</span> RENASCER (SOLO)
+            <i data-lucide="rotate-ccw"></i> RENASCER (SOLO)
         </button>
         <div class="stat-badge kills" style="border-color: #facc15;">
-            <span>🎯</span> KILLS: <span id="kills-count" style="color: #facc15;">0</span>
+            <i data-lucide="crosshair" style="color: #facc15;"></i> KILLS: <span id="kills-count" style="color: #facc15;">0</span>
         </div>
         <div class="stat-badge deaths" style="border-color: #ef4444;">
-            <span>💀</span> MORTES: <span id="deaths-count" style="color: #ef4444;">0</span>
+            <i data-lucide="skull" style="color: #ef4444;"></i> MORTES: <span id="deaths-count" style="color: #ef4444;">0</span>
         </div>
         <div class="stat-badge alive" style="border-color: #4ade80;">
-            <span>👥</span> VIVOS: <span id="alive-count" style="color: #4ade80;">1</span>
+            <i data-lucide="users" style="color: #4ade80;"></i> VIVOS: <span id="alive-count" style="color: #4ade80;">1</span>
         </div>
         <div class="stat-badge storm" style="border-color: #a855f7; background: rgba(168, 85, 247, 0.25);">
-            <span>🟣</span> GÁS: <span id="hud-storm-radius" style="color: #d8b4fe;">95m</span>
+            <i data-lucide="biohazard" style="color: #d8b4fe;"></i> GÁS TÓXICO: <span id="hud-storm-radius" style="color: #d8b4fe;">95m</span>
         </div>
     </div>
 
     <!-- BARRA DE VIDA E ESCUDO -->
     <div class="player-status" id="player-status-hud">
         <div class="team-pill-hud" id="my-team-pill" style="background: rgba(37, 99, 235, 0.35); border: 1px solid #38bdf8; color: #bae6fd;">
-            <span>🔵</span> TIME AZUL
+            <i data-lucide="shield"></i> TIME AZUL
         </div>
 
         <div class="bar-container">
             <div class="bar-label">
-                <span style="color: #38bdf8;">🛡️ ESCUDO</span>
+                <span style="color: #38bdf8;"><i data-lucide="shield"></i> ESCUDO</span>
                 <span id="shield-num" style="color: #38bdf8;">100</span>
             </div>
             <div class="bar-bg">
@@ -1187,7 +1360,7 @@
 
         <div class="bar-container">
             <div class="bar-label">
-                <span style="color: #4ade80;">💚 VIDA</span>
+                <span style="color: #4ade80;"><i data-lucide="heart"></i> VIDA</span>
                 <span id="health-num" style="color: #4ade80;">100</span>
             </div>
             <div class="bar-bg">
@@ -1196,34 +1369,34 @@
         </div>
 
         <div class="wood-count">
-            <span>🪵</span> Madeira: <span id="wood-num">150</span>
+            <i data-lucide="box"></i> Madeira: <span id="wood-num">150</span>
         </div>
     </div>
 
-    <!-- SLOTS DE ARMAS E CONSTRUÇÃO (6 ARMAS) -->
+    <!-- SLOTS DE ARMAS E CONSTRUÇÃO (ARMAS + 3 TIPOS DE GRANADAS) -->
     <div class="weapon-hud" id="weapon-hud-container">
         <!-- BARRA DE AÇÕES RÁPIDAS (VISÃO E CORRIDA) -->
         <div class="quick-action-bar">
             <button id="btn-camera-view" class="action-hud-btn" title="Alternar visão (1ª Pessoa / 3ª Pessoa - Tecla V)">
-                <span>📷</span> <span id="camera-view-label">3ª PESSOA (V)</span>
+                <i data-lucide="camera"></i> <span id="camera-view-label">3ª PESSOA (V)</span>
             </button>
             <button id="btn-sprint" class="action-hud-btn" title="Ativar corrida rápida - Tecla Shift">
-                <span id="sprint-icon">🏃</span> <span id="sprint-label">CORRER (SHIFT)</span>
+                <span id="sprint-icon"><i data-lucide="footprints"></i></span> <span id="sprint-label">CORRER (SHIFT)</span>
             </button>
         </div>
 
         <div class="build-menu">
             <div class="build-slot" id="build-wall" title="Tecla Z">
-                🧱 Parede
-                <span>(Z) 10🪵</span>
+                <i data-lucide="square"></i> Parede
+                <span>(Z) 10</span>
             </div>
             <div class="build-slot" id="build-ramp" title="Tecla X">
-                📐 Rampa
-                <span>(X) 10🪵</span>
+                <i data-lucide="triangle"></i> Rampa
+                <span>(X) 10</span>
             </div>
             <div class="build-slot" id="build-floor" title="Tecla C">
-                🟫 Chão
-                <span>(C) 10🪵</span>
+                <i data-lucide="minus-square"></i> Chão
+                <span>(C) 10</span>
             </div>
         </div>
 
@@ -1231,44 +1404,65 @@
             <!-- Slot 1: Picareta -->
             <div class="slot" id="slot-1" title="Picareta Tática (Corpo a corpo)">
                 <span class="slot-key">1</span>
-                <span>⛏️</span>
+                <i data-lucide="axe"></i>
                 <span class="slot-title">Picareta</span>
-                <span class="slot-dmg">25⚔️</span>
+                <span class="slot-dmg">25</span>
             </div>
             <!-- Slot 2: SCAR -->
             <div class="slot gold active" id="slot-2" title="SCAR Dourada (Assault Rifle)">
                 <span class="slot-key">2</span>
-                <span>🔫</span>
+                <i data-lucide="crosshair" style="color: #facc15;"></i>
                 <span class="slot-title" style="color: #facc15;">SCAR</span>
-                <span class="slot-dmg">35🎯</span>
+                <span class="slot-dmg">35</span>
             </div>
             <!-- Slot 3: Shotgun -->
             <div class="slot purple" id="slot-3" title="Calibre 12 Tática (Curto Alcance Devastador)">
                 <span class="slot-key">3</span>
-                <span>💥</span>
+                <i data-lucide="flame" style="color: #c084fc;"></i>
                 <span class="slot-title" style="color: #c084fc;">Calibre 12</span>
-                <span class="slot-dmg">90💥</span>
+                <span class="slot-dmg">90</span>
             </div>
             <!-- Slot 4: Heavy Sniper -->
             <div class="slot blue" id="slot-4" title="Sniper Pesada (Longo Alcance / 1-Hit HS)">
                 <span class="slot-key">4</span>
-                <span>🎯</span>
+                <i data-lucide="crosshair" style="color: #38bdf8;"></i>
                 <span class="slot-title" style="color: #38bdf8;">Sniper</span>
-                <span class="slot-dmg">110⚡</span>
+                <span class="slot-dmg">110</span>
             </div>
             <!-- Slot 5: RPG -->
             <div class="slot gold" id="slot-5" title="Lança-Foguetes RPG (Dano em Área)">
                 <span class="slot-key">5</span>
-                <span>🚀</span>
+                <i data-lucide="rocket" style="color: #facc15;"></i>
                 <span class="slot-title" style="color: #facc15;">RPG</span>
-                <span class="slot-dmg">95💣</span>
+                <span class="slot-dmg">95</span>
             </div>
             <!-- Slot 6: Mini Shield -->
             <div class="slot green" id="slot-6" title="Mini Shield (+50 Escudo / +25 Vida)">
                 <span class="slot-key">6</span>
-                <span>🧪</span>
+                <i data-lucide="flask-conical" style="color: #4ade80;"></i>
                 <span class="slot-title" style="color: #4ade80;">Cura</span>
-                <span class="slot-dmg">+50🛡️</span>
+                <span class="slot-dmg">+50</span>
+            </div>
+            <!-- Slot 7: Granada Explosiva (HE) -->
+            <div class="slot grenade-he" id="slot-7" title="Granada Explosiva HE (Dano 95 em área)">
+                <span class="slot-key">7</span>
+                <i data-lucide="bomb" style="color: #f97316;"></i>
+                <span class="slot-title" style="color: #f97316;">Explosiva</span>
+                <span class="slot-dmg">95</span>
+            </div>
+            <!-- Slot 8: Granada de Luz (Flashbang) -->
+            <div class="slot grenade-flash" id="slot-8" title="Granada de Luz / Flashbang (Cega oponentes)">
+                <span class="slot-key">8</span>
+                <i data-lucide="sun" style="color: #38bdf8;"></i>
+                <span class="slot-title" style="color: #38bdf8;">Luz</span>
+                <span class="slot-dmg">Flash</span>
+            </div>
+            <!-- Slot 9: Granada de Fumaça (Smoke) -->
+            <div class="slot grenade-smoke" id="slot-9" title="Granada de Fumaça (Cortina densa 15s)">
+                <span class="slot-key">9</span>
+                <i data-lucide="cloud" style="color: #94a3b8;"></i>
+                <span class="slot-title" style="color: #94a3b8;">Fumaça</span>
+                <span class="slot-dmg">15s</span>
             </div>
         </div>
     </div>
@@ -1276,14 +1470,14 @@
     <!-- MODAL TAB - PLACAR GERAL (LEADERBOARD) -->
     <div id="leaderboard-modal">
         <div class="lb-header">
-            <h3>🏆 PLACAR DE TIMES E JOGADORES</h3>
+            <h3><i data-lucide="trophy"></i> PLACAR DE TIMES E JOGADORES</h3>
             <span style="font-size: 13px; color: #94a3b8;">Segure ou aperte <kbd style="background: #334155; padding: 2px 6px; border-radius: 4px;">TAB</kbd> para fechar</span>
         </div>
         <div class="lb-columns">
             <!-- Time Azul -->
             <div class="lb-team-col blue">
                 <div class="lb-team-title" style="color: #38bdf8;">
-                    <span>🔵 TIME AZUL</span>
+                    <span><i data-lucide="shield"></i> TIME AZUL</span>
                     <span id="lb-score-blue">0 Kills</span>
                 </div>
                 <div id="lb-list-blue">
@@ -1293,7 +1487,7 @@
             <!-- Time Vermelho -->
             <div class="lb-team-col red">
                 <div class="lb-team-title" style="color: #f87171;">
-                    <span>🔴 TIME VERMELHO</span>
+                    <span><i data-lucide="shield"></i> TIME VERMELHO</span>
                     <span id="lb-score-red">0 Kills</span>
                 </div>
                 <div id="lb-list-red">
@@ -1307,41 +1501,94 @@
     <div id="victory-screen">
         <div class="victory-card">
             <h1 id="victory-title">#1 VICTORY ROYALE!</h1>
-            <p id="victory-subtitle">👑 SEU TIME É O GRANDE CAMPEÃO! 🏆</p>
-            <button class="btn-action-gold" id="btn-victory-restart">🪂 RENASCER NA ILHA (SOLO)</button>
+            <p id="victory-subtitle"><i data-lucide="crown"></i> SEU TIME É O GRANDE CAMPEÃO! <i data-lucide="trophy"></i></p>
+            <button class="btn-action-gold" id="btn-victory-restart" style="display: inline-flex; align-items: center; gap: 8px;"><i data-lucide="rotate-ccw"></i> RENASCER NA ILHA (SOLO)</button>
         </div>
     </div>
 
     <!-- TELA DE ELIMINAÇÃO -->
     <div id="eliminated-screen">
         <div class="elim-card">
-            <h2>💀 VOCÊ FOI ELIMINADO!</h2>
+            <h2><i data-lucide="skull"></i> VOCÊ FOI ELIMINADO!</h2>
             <div id="killer-name-display">Eliminado na batalha</div>
             <div class="elim-btns">
-                <button class="btn-restart-round" id="btn-elim-restart">🪂 RENASCER NO CHÃO (APENAS EU)</button>
-                <button class="btn-spectate" id="btn-elim-spectate">👁️ MODO ESPECTADOR (VOAR LIVRE)</button>
+                <button class="btn-restart-round" id="btn-elim-restart" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="rotate-ccw"></i> RENASCER NO CHÃO (APENAS EU)</button>
+                <button class="btn-spectate" id="btn-elim-spectate" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="eye"></i> MODO ESPECTADOR (VOAR LIVRE)</button>
             </div>
         </div>
     </div>
 
     <!-- ====================================================
-         LOBBY INICIAL (MEMÓRIA, NOMES PRÉ-DEFINIDOS & TIMES)
+         LOBBY INICIAL COM SISTEMA DE SALAS MULTIPLAYER
          ==================================================== -->
     <div id="lobby-screen">
         <div class="lobby-box">
             <h1>BERNARDONITE</h1>
-            <p>Bernardo, Família & Amigos — Times, Labirinto 3D e Novas Armas!</p>
+            <p>Bernardo, Família & Amigos — Salas, Times, Gás Tóxico & Granadas!</p>
+
+            <!-- BROWSER DE SALAS MULTIPLAYER -->
+            <div class="rooms-browser-section" style="margin-bottom: 18px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 11px; font-weight: bold; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="server"></i> Salas Ativas na Ilha:
+                    </span>
+                    <button type="button" id="btn-toggle-create-room" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 5px 12px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="plus-circle"></i> Criar Nova Sala
+                    </button>
+                </div>
+
+                <!-- Painel de Criação de Sala Personalizada -->
+                <div id="create-room-panel" style="display: none; background: rgba(30, 41, 59, 0.9); border: 2px dashed #38bdf8; border-radius: 14px; padding: 12px; margin-bottom: 10px;">
+                    <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="settings"></i> Configurar Sala Personalizada
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">NOME DA SALA:</label>
+                        <input type="text" id="new-room-name-input" placeholder="Ex: Sala do Bernardo" maxlength="24" style="width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 13px; font-weight: bold; outline: none;">
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">QUANTIDADE DE BOTS:</label>
+                            <select id="new-room-bots-select" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 12px; font-weight: bold; outline: none;">
+                                <option value="0">0 (Apenas Jogadores / PvP Puro)</option>
+                                <option value="4">4 Bots (Partida Rápida)</option>
+                                <option value="6" selected>6 Bots (Padrão Equilibrado)</option>
+                                <option value="10">10 Bots (Batalha Intensa)</option>
+                                <option value="16">16 Bots (Guerra Caótica)</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 10px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px;">META DE KILLS:</label>
+                            <select id="new-room-kills-select" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 12px; font-weight: bold; outline: none;">
+                                <option value="15">15 Kills (Rápida)</option>
+                                <option value="25" selected>25 Kills (Padrão)</option>
+                                <option value="50">50 Kills (Batalha Longa)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" id="btn-submit-create-room" style="width: 100%; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; font-weight: 800; font-size: 13px; padding: 9px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i data-lucide="check"></i> Confirmar e Criar Sala
+                    </button>
+                </div>
+
+                <!-- Lista com Cards de Salas -->
+                <div id="rooms-list-container" style="display: flex; flex-direction: column; gap: 6px; max-height: 170px; overflow-y: auto;">
+                    <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 12px;">
+                        Carregando salas disponíveis...
+                    </div>
+                </div>
+            </div>
 
             <!-- Nomes Rápidos Pré-definidos -->
             <div class="name-chips-title">Escolha seu nome rápido:</div>
             <div class="name-chips-grid">
-                <div class="name-chip selected" data-name="Bernardo">👑 Bernardo</div>
-                <div class="name-chip" data-name="Diniz">⚡ Diniz</div>
-                <div class="name-chip" data-name="João">🎯 João</div>
-                <div class="name-chip" data-name="Carol">🌸 Carol</div>
-                <div class="name-chip" data-name="Joãoz">🔥 Joãoz</div>
-                <div class="name-chip" data-name="Sophia">✨ Sophia</div>
-                <div class="name-chip" data-name="Conrado">🛡️ Conrado</div>
+                <div class="name-chip selected" data-name="Bernardo"><i data-lucide="crown"></i> Bernardo</div>
+                <div class="name-chip" data-name="Diniz"><i data-lucide="zap"></i> Diniz</div>
+                <div class="name-chip" data-name="João"><i data-lucide="crosshair"></i> João</div>
+                <div class="name-chip" data-name="Carol"><i data-lucide="sparkles"></i> Carol</div>
+                <div class="name-chip" data-name="Joãoz"><i data-lucide="flame"></i> Joãoz</div>
+                <div class="name-chip" data-name="Sophia"><i data-lucide="sparkles"></i> Sophia</div>
+                <div class="name-chip" data-name="Conrado"><i data-lucide="shield"></i> Conrado</div>
             </div>
 
             <!-- Input de Nome Customizado -->
@@ -1350,10 +1597,12 @@
                 <input type="text" id="player-name-input" value="Bernardo" maxlength="15">
             </div>
 
-            <!-- Seletor de Quantidade de Bots -->
+            <!-- Seletor de Quantidade de Bots da Sala Selecionada -->
             <div class="bot-selector-container" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.7); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">🤖 Bots na Batalha:</span>
+                    <span style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="bot"></i> Bots na Batalha:
+                    </span>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <button type="button" id="btn-bot-minus" style="width: 32px; height: 32px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">-</button>
                         <span id="bot-count-text" style="font-size: 15px; font-weight: 800; color: #38bdf8; min-width: 55px; text-align: center;">6 Bots</span>
@@ -1374,14 +1623,14 @@
                 <label style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Escolha seu Time de Batalha:</label>
                 <div class="teams-grid">
                     <div class="team-card-opt blue selected" id="opt-team-blue" data-team="blue">
-                        <div class="team-card-icon">🔵</div>
+                        <div class="team-card-icon"><i data-lucide="shield" style="color: #38bdf8; width: 28px; height: 28px;"></i></div>
                         <div class="team-card-info">
                             <h4 style="color: #38bdf8;">TIME AZUL</h4>
                             <p>Base Noroeste</p>
                         </div>
                     </div>
                     <div class="team-card-opt red" id="opt-team-red" data-team="red">
-                        <div class="team-card-icon">🔴</div>
+                        <div class="team-card-icon"><i data-lucide="shield" style="color: #ef4444; width: 28px; height: 28px;"></i></div>
                         <div class="team-card-info">
                             <h4 style="color: #f87171;">TIME VERMELHO</h4>
                             <p>Base Sudeste</p>
@@ -1403,31 +1652,41 @@
             </div>
 
             <div class="spawn-ground-badge">
-                📍 <b>Início direto no chão</b> na base do seu time (sem espera de queda)!
+                <i data-lucide="map-pin"></i> <b>Início direto no chão</b> na base do seu time (sem espera de queda)!
             </div>
 
-            <button class="join-btn" id="join-game-btn">🚀 ENTRAR NA BATALHA!</button>
+            <button class="join-btn" id="join-game-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i data-lucide="swords"></i> ENTRAR NA BATALHA!
+            </button>
         </div>
     </div>
 
-    <!-- OVERLAYS E ALERTA DE GÁS TÓXICO / TEMPESTADE -->
+    <!-- OVERLAYS E ALERTA DE GÁS TÓXICO -->
     <div id="toxic-gas-overlay"></div>
-    <div id="toxic-gas-warning">⚠️ PERIGO: VOCÊ ESTÁ NO GÁS TÓXICO! DANO CONTÍNUO</div>
+    <div id="toxic-gas-warning"><i data-lucide="biohazard"></i> PERIGO: VOCÊ ESTÁ NO GÁS TÓXICO! DANO CONTÍNUO</div>
 
-    <!-- CONTROLES MOBILE TOUCH (JOYSTICK + BOTÕES DE AÇÃO) -->
+    <!-- CONTROLES MOBILE TOUCH (JOYSTICK + BOTÕES DE AÇÃO SEM SOBREPOSIÇÃO) -->
     <div id="mobile-controls-container">
         <!-- Joystick Virtual Analógico -->
         <div id="mobile-joystick-base">
             <div id="mobile-joystick-knob"></div>
         </div>
 
-        <!-- Botões de Ação Mobile -->
+        <!-- Botão de Sprint (Ergonômico acima do Joystick) -->
+        <button id="btn-mobile-sprint" title="Correr / Disparar"><i data-lucide="footprints"></i></button>
+
+        <!-- Barra Superior Direita Mobile (Tela Cheia + Câmera) -->
+        <div id="mobile-top-bar">
+            <button id="btn-mobile-fullscreen" class="mobile-top-btn" title="Tela Cheia"><i data-lucide="maximize" id="fs-icon"></i></button>
+            <button id="btn-mobile-cam" class="mobile-top-btn" title="Alternar Câmera (1ª / 3ª Pessoa)"><i data-lucide="camera"></i></button>
+        </div>
+
+        <!-- Botões de Ação Mobile Limpos e Não Sobrepostos -->
         <div id="mobile-action-buttons">
-            <button id="btn-mobile-cam" class="mobile-btn" title="Alternar Câmera (1ª / 3ª Pessoa)">👁️</button>
-            <button id="btn-mobile-sprint" class="mobile-btn" title="Correr / Disparar">🏃</button>
-            <button id="btn-mobile-jump" class="mobile-btn" title="Pular">🦘</button>
-            <button id="btn-mobile-build" class="mobile-btn" title="Construir Estrutura">🧱</button>
-            <button id="btn-mobile-fire" class="mobile-btn" title="Atirar / Golpear">🔫</button>
+            <button id="btn-mobile-jump" class="mobile-btn" title="Pular"><i data-lucide="chevrons-up"></i></button>
+            <button id="btn-mobile-grenade" class="mobile-btn" title="Lançar Granada (G)"><i data-lucide="bomb"></i></button>
+            <button id="btn-mobile-build" class="mobile-btn" title="Construir"><i data-lucide="square"></i></button>
+            <button id="btn-mobile-fire" class="mobile-btn" title="Atirar"><i data-lucide="crosshair"></i></button>
         </div>
     </div>
 
@@ -1437,9 +1696,38 @@
 
     <script>
         // ==========================================
-        // 1. ÁUDIO SINTETIZADO TÁTICO
+        // HELPER PARA ÍCONES SVG DINÂMICOS (LUCIDE)
+        // ==========================================
+        function refreshIcons() {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }
+        window.addEventListener('DOMContentLoaded', refreshIcons);
+
+        // ==========================================
+        // 1. ÁUDIO SINTETIZADO TÁTICO & EFEITOS ESPECIAIS
         // ==========================================
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTinnitusTone(intensity = 1.0) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(3150, now);
+                const peakGain = Math.min(0.4, 0.4 * intensity);
+                gain.gain.setValueAtTime(peakGain, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 4.2);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 4.3);
+            } catch(e) {}
+        }
+
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const now = audioCtx.currentTime;
@@ -1524,6 +1812,45 @@
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
                 osc.start(now);
                 osc.stop(now + 0.12);
+            } else if (type === 'grenade_pin') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1900, now);
+                osc.frequency.exponentialRampToValueAtTime(500, now + 0.09);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+                osc.start(now);
+                osc.stop(now + 0.09);
+            } else if (type === 'grenade_flash_pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(2500, now);
+                osc.frequency.exponentialRampToValueAtTime(280, now + 0.16);
+                gain.gain.setValueAtTime(0.75, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+                osc.start(now);
+                osc.stop(now + 0.16);
+            } else if (type === 'grenade_smoke_hiss') {
+                try {
+                    const bufSize = Math.floor(audioCtx.sampleRate * 1.5);
+                    const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+                    const d = buf.getChannelData(0);
+                    for (let i = 0; i < bufSize; i++) {
+                        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.9));
+                    }
+                    const nSource = audioCtx.createBufferSource();
+                    nSource.buffer = buf;
+                    const f = audioCtx.createBiquadFilter();
+                    f.type = 'bandpass';
+                    f.frequency.setValueAtTime(1150, now);
+                    f.Q.setValueAtTime(1.1, now);
+                    const hGain = audioCtx.createGain();
+                    hGain.gain.setValueAtTime(0.45, now);
+                    hGain.gain.exponentialRampToValueAtTime(0.01, now + 1.4);
+                    nSource.connect(f);
+                    f.connect(hGain);
+                    hGain.connect(audioCtx.destination);
+                    nSource.start(now);
+                    nSource.stop(now + 1.5);
+                } catch(e) {}
             } else if (type === 'victory') {
                 [440, 554, 659, 880].forEach((freq, idx) => {
                     const o = audioCtx.createOscillator();
@@ -1827,7 +2154,7 @@
             }
         });
 
-        // Grupo de partículas e puffs de fumaça ao redor da tempestade
+        // Grupo de partículas e puffs de fumaça ao redor do gás tóxico
         const smokePuffsGroup = new THREE.Group();
         scene.add(smokePuffsGroup);
 
@@ -2184,6 +2511,32 @@
                 const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.07, 8), woodMat);
                 cork.position.y = 0.15;
                 group.add(flask, liquid, cork);
+            } else if (slot === 7) {
+                // GRANADA EXPLOSIVA (HE)
+                const heMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.4, metalness: 0.5 });
+                const body = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), heMat);
+                const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.08, 8), darkMat);
+                cap.position.y = 0.12;
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.008, 6, 12), metalMat);
+                ring.position.set(0.04, 0.13, 0);
+                group.add(body, cap, ring);
+            } else if (slot === 8) {
+                // GRANADA DE LUZ (FLASHBANG)
+                const flashMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.8 });
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 10), flashMat);
+                const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.07, 8), darkMat);
+                cap.position.y = 0.13;
+                const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.072, 0.04, 10), darkMat);
+                group.add(body, cap, stripe);
+            } else if (slot === 9) {
+                // GRANADA DE FUMAÇA (SMOKE)
+                const smokeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.4 });
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.24, 10), smokeMat);
+                const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.07, 8), darkMat);
+                cap.position.y = 0.14;
+                const ringTop = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.008, 6, 12), metalMat);
+                ringTop.position.set(0.04, 0.15, 0);
+                group.add(body, cap, ringTop);
             }
 
             return group;
@@ -2557,6 +2910,11 @@
                 wp.scale.set(0.85, 0.85, 0.85);
                 wp.position.set(0, 0.04, 0);
                 wp.rotation.set(0, 0, 0);
+            } else if (slot >= 7 && slot <= 9) {
+                // Granadas empunhadas prontas para arremesso
+                wp.scale.set(0.9, 0.9, 0.9);
+                wp.position.set(0.04, 0.05, 0.02);
+                wp.rotation.set(0.2, 0, 0);
             } else {
                 // SCAR, Shotgun, Sniper
                 wp.scale.set(0.82, 0.82, 0.82);
@@ -2578,14 +2936,14 @@
                     btn.style.borderColor = '#4ade80';
                     btn.style.color = '#4ade80';
                 }
-                showToast('📷 Visão: 1ª PESSOA (FPS)');
+                showToast('<i data-lucide="camera"></i> Visão: 1ª PESSOA (FPS)');
             } else {
                 if (label) label.textContent = '3ª PESSOA (V)';
                 if (btn) {
                     btn.style.borderColor = '#38bdf8';
                     btn.style.color = '#38bdf8';
                 }
-                showToast('📷 Visão: 3ª PESSOA (TPS)');
+                showToast('<i data-lucide="camera"></i> Visão: 3ª PESSOA (TPS)');
             }
         }
 
@@ -2602,11 +2960,11 @@
                 if (isSprinting) {
                     btn.classList.add('active-sprint');
                     label.textContent = 'CORRENDO (SHIFT)';
-                    if (icon) icon.textContent = '⚡';
+                    if (icon) { icon.innerHTML = '<i data-lucide="zap"></i>'; refreshIcons(); }
                 } else {
                     btn.classList.remove('active-sprint');
                     label.textContent = 'CORRER (SHIFT)';
-                    if (icon) icon.textContent = '🏃';
+                    if (icon) { icon.innerHTML = '<i data-lucide="footprints"></i>'; refreshIcons(); }
                 }
             }
         }
@@ -2657,22 +3015,85 @@
         // ==========================================
         let ws = null;
 
+        let availableRooms = [];
+        let selectedRoomId = 'room_oficial';
+
+        function renderRoomsList(rooms) {
+            availableRooms = rooms;
+            const container = document.getElementById('rooms-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            rooms.forEach(r => {
+                const isSelected = (r.id === selectedRoomId);
+                const card = document.createElement('div');
+                card.className = `room-card-item ${isSelected ? 'selected-room' : ''}`;
+                card.setAttribute('data-room-id', r.id);
+                card.innerHTML = `
+                    <div style="flex: 1;">
+                        <div class="room-card-title">
+                            <i data-lucide="${r.isDefault ? 'shield' : 'door-open'}" style="color:${isSelected ? '#38bdf8' : '#94a3b8'};"></i>
+                            <span>${r.name}</span>
+                        </div>
+                        <div class="room-card-meta">
+                            <span><i data-lucide="users" style="width:1em;height:1em;"></i> ${r.playerCount} Jogadores</span>
+                            <span><i data-lucide="bot" style="width:1em;height:1em;"></i> ${r.botCount} Bots</span>
+                            <span><i data-lucide="crosshair" style="width:1em;height:1em;"></i> Meta ${r.targetKills}</span>
+                            <span><i data-lucide="biohazard" style="width:1em;height:1em;"></i> Gás ${Math.round(r.stormRadius)}m</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span style="font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 8px; background:${isSelected ? '#0284c7' : '#1e293b'}; border: 1px solid ${isSelected ? '#38bdf8' : '#475569'}; color: #fff;">
+                            ${isSelected ? 'SELECIONADA' : 'CLIQUE P/ ENTRAR'}
+                        </span>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    selectedRoomId = r.id;
+                    updateBotCountUI(r.botCount);
+                    renderRoomsList(availableRooms);
+                });
+
+                container.appendChild(card);
+            });
+            refreshIcons();
+        }
+
         function connectWebSocket() {
+            if (ws && ws.readyState === 1) return;
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.host;
             ws = new WebSocket(`${protocol}//${host}`);
 
             ws.onopen = () => {
-                ws.send(JSON.stringify({
-                    type: 'join',
-                    name: myName,
-                    team: myTeam,
-                    skinColor: mySkin
-                }));
+                ws.send(JSON.stringify({ type: 'get_rooms' }));
             };
 
             ws.onmessage = (msg) => {
                 const data = JSON.parse(msg.data);
+
+                if (data.type === 'room_list') {
+                    renderRoomsList(data.rooms || []);
+                }
+
+                if (data.type === 'room_created') {
+                    selectedRoomId = data.roomId;
+                    showToast(`<i data-lucide="check"></i> Sala "${data.room.name}" criada com sucesso!`);
+                    const cPanel = document.getElementById('create-room-panel');
+                    if (cPanel) cPanel.style.display = 'none';
+                    if (data.room && data.room.botCount !== undefined) {
+                        updateBotCountUI(data.room.botCount);
+                    }
+                }
+
+                if (data.type === 'grenade_thrown') {
+                    spawnRemoteGrenade(data);
+                }
+
+                if (data.type === 'grenade_exploded') {
+                    handleGrenadeExplosionEvent(data);
+                }
 
                 if (data.type === 'welcome') {
                     myId = data.id;
@@ -2706,7 +3127,7 @@
                 if (data.type === 'player_joined') {
                     if (data.player.id !== myId) {
                         spawnRemotePlayer(data.player);
-                        showToast(`👋 ${data.player.name} entrou no Time [${data.player.team.toUpperCase()}]!`);
+                        showToast(`<i data-lucide="user-plus"></i> ${data.player.name} entrou no Time [${data.player.team.toUpperCase()}]!`);
                     }
                     if (data.aliveCount !== undefined) updateAliveCount(data.aliveCount);
                     if (data.teamScores) updateTeamScores(data.teamScores);
@@ -2760,7 +3181,11 @@
                 }
 
                 if (data.type === 'player_eliminated') {
-                    addKillFeed(`${data.killerName} (${data.killerTeam.toUpperCase()}) eliminou ${data.victimName} 🏆`);
+                    if (data.killerId === 'GAS_TOXICO' || data.killerTeam === 'gas' || data.weapon === 'gas') {
+                        addKillFeed(`${data.victimName} sucumbiu ao Gás Tóxico <i data-lucide="biohazard"></i>`);
+                    } else {
+                        addKillFeed(`${data.killerName} (${data.killerTeam.toUpperCase()}) eliminou ${data.victimName} <i data-lucide="trophy"></i>`);
+                    }
                     if (data.aliveCount !== undefined) updateAliveCount(data.aliveCount);
                     if (data.teamScores) updateTeamScores(data.teamScores);
 
@@ -2775,7 +3200,7 @@
                         localStats.kills = data.killerKills;
                         document.getElementById('kills-count').innerText = localStats.kills;
                         playSound('victory');
-                        showToast(`🎯 VOCÊ ELIMINOU ${data.victimName}!`);
+                        showToast(`<i data-lucide="crosshair"></i> VOCÊ ELIMINOU ${data.victimName}!`);
                     }
 
                     if (data.victimId === myId) {
@@ -2787,7 +3212,12 @@
                         document.getElementById('deaths-count').innerText = localStats.deaths;
                         localPlayer.visible = false;
                         spawnEliminationParticles(localPlayer.position.x, localPlayer.position.y, localPlayer.position.z);
-                        document.getElementById('killer-name-display').innerText = `Eliminado por ${data.killerName} [Time ${data.killerTeam.toUpperCase()}]`;
+                        if (data.killerId === 'GAS_TOXICO' || data.killerTeam === 'gas' || data.weapon === 'gas') {
+                            document.getElementById('killer-name-display').innerHTML = `<i data-lucide="biohazard" style="color:#d8b4fe;"></i> Eliminado pelo Gás Tóxico`;
+                        } else {
+                            document.getElementById('killer-name-display').innerText = `Eliminado por ${data.killerName} [Time ${data.killerTeam.toUpperCase()}]`;
+                        }
+                        refreshIcons();
                         document.getElementById('eliminated-screen').style.display = 'flex';
                         if (document.exitPointerLock) {
                             try { document.exitPointerLock(); } catch(e){}
@@ -2838,7 +3268,7 @@
                             rp.userData.targetPos.set(data.x, data.y, data.z);
                             rp.userData.updateNameTag(100, 100);
                         }
-                        addKillFeed(`🪂 ${data.name} renasceu na base!`);
+                        addKillFeed(`<i data-lucide="rotate-ccw"></i> ${data.name} renasceu na base!`);
                     }
                     if (data.aliveCount !== undefined) updateAliveCount(data.aliveCount);
                     if (data.teamScores) updateTeamScores(data.teamScores);
@@ -2854,7 +3284,7 @@
                     if (rp) {
                         scene.remove(rp);
                         remotePlayers.delete(data.id);
-                        showToast(`🚪 ${data.name} saiu.`);
+                        showToast(`<i data-lucide="log-out"></i> ${data.name} saiu.`);
                     }
                     if (data.aliveCount !== undefined) updateAliveCount(data.aliveCount);
                     if (data.teamScores) updateTeamScores(data.teamScores);
@@ -2895,8 +3325,8 @@
                 row.innerHTML = `
                     <span>${p.id === myId ? '⭐ ' : ''}${p.name}</span>
                     <div class="lb-stats">
-                        <span style="color: #facc15;">🎯 ${p.kills}</span>
-                        <span style="color: #ef4444;">💀 ${p.deaths || 0}</span>
+                        <span style="color: #facc15;"><i data-lucide="crosshair"></i> ${p.kills}</span>
+                        <span style="color: #ef4444;"><i data-lucide="skull"></i> ${p.deaths || 0}</span>
                     </div>
                 `;
 
@@ -2925,8 +3355,9 @@
             const feed = document.getElementById('kill-feed');
             const item = document.createElement('div');
             item.className = 'feed-msg';
-            item.innerText = text;
+            item.innerHTML = text;
             feed.prepend(item);
+            refreshIcons();
             setTimeout(() => item.remove(), 4500);
         }
 
@@ -2942,7 +3373,7 @@
         function buildStructure(type) {
             if (!localStats.isAlive) return;
             if (localStats.wood < 10) {
-                showToast("⚠️ Madeira insuficiente! Bata nas árvores com a picareta.");
+                showToast('<i data-lucide="alert-triangle"></i> Madeira insuficiente! Bata nas árvores com a picareta.');
                 return;
             }
             localStats.wood -= 10;
@@ -2994,10 +3425,19 @@
 
         let roundRestartTimer = null;
         function handleRoundEnded(data) {
-            const iWon = (data.winningTeam === myTeam);
             playSound('victory');
-            document.getElementById('victory-title').innerText = iWon ? '#1 VICTORY ROYALE!' : 'FIM DA RODADA!';
-            document.getElementById('victory-subtitle').innerHTML = `🏆 O TIME <span style="color:${data.winningTeam==='red'?'#ef4444':'#38bdf8'}; font-weight:900;">${data.winningTeam.toUpperCase()}</span> VENCEU COM 25 KILLS! 🏆<br><span id="restart-countdown" style="font-size:16px; color:#facc15; display:block; margin-top:10px;">Nova rodada em ${data.countdown || 5}s...</span>`;
+            const vTitle = document.getElementById('victory-title');
+            const vSubtitle = document.getElementById('victory-subtitle');
+
+            if (data.reason === 'gas') {
+                vTitle.innerHTML = '<i data-lucide="biohazard"></i> GÁS TÓXICO!';
+                vSubtitle.innerHTML = `<span style="color:#d8b4fe; font-weight:900;">O Gás Tóxico tomou toda a ilha!</span><br><span id="restart-countdown" style="font-size:16px; color:#facc15; display:block; margin-top:10px;">Reiniciando ilha em ${data.countdown || 5}s...</span>`;
+            } else {
+                const iWon = (data.winningTeam === myTeam);
+                vTitle.innerHTML = iWon ? '<i data-lucide="crown"></i> #1 VICTORY ROYALE!' : 'FIM DA RODADA!';
+                vSubtitle.innerHTML = `<i data-lucide="trophy"></i> O TIME <span style="color:${data.winningTeam==='red'?'#ef4444':'#38bdf8'}; font-weight:900;">${(data.winningTeam || '').toUpperCase()}</span> VENCEU A RODADA! <i data-lucide="trophy"></i><br><span id="restart-countdown" style="font-size:16px; color:#facc15; display:block; margin-top:10px;">Nova rodada em ${data.countdown || 5}s...</span>`;
+            }
+            refreshIcons();
             document.getElementById('victory-screen').style.display = 'flex';
             if (document.exitPointerLock) {
                 try { document.exitPointerLock(); } catch(e){}
@@ -3055,7 +3495,7 @@
                 updateLeaderboardUI(data.players);
             }
 
-            showToast("🔥 NOVA RODADA INICIADA! ILHA E PLACAR REINICIADOS!");
+            showToast('<i data-lucide="flame"></i> NOVA RODADA INICIADA! ILHA E PLACAR REINICIADOS!');
             playSound('victory');
         }
 
@@ -3063,6 +3503,185 @@
         // 10. NOVAS ARMAS COM NOVAS FORÇAS E FÍSICA
         // ==========================================
         // Projéteis ativos de RPG
+        // ==========================================
+        // SISTEMA DE ARREMESSO E FÍSICA DE GRANADAS
+        // ==========================================
+        const activeGrenades = [];
+        const activeSmokeClouds = [];
+
+        function throwGrenade(type = 'he') {
+            if (!localStats.isAlive || localStats.isSpectating) return;
+            playSound('grenade_pin');
+
+            const muzzle = getMuzzlePosition();
+            const forward = camera.getWorldDirection(new THREE.Vector3()).normalize();
+            // Arco de lançamento
+            const velocity = forward.clone().multiplyScalar(24.0).add(new THREE.Vector3(0, 5.0, 0));
+
+            let grenadeMesh;
+            if (type === 'he') {
+                grenadeMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.13, 10, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.4, metalness: 0.5 })
+                );
+            } else if (type === 'flash') {
+                grenadeMesh = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.08, 0.24, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.8 })
+                );
+            } else {
+                grenadeMesh = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.08, 0.26, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.4 })
+                );
+            }
+            grenadeMesh.position.copy(muzzle);
+            scene.add(grenadeMesh);
+
+            const fuseMs = (type === 'smoke') ? 1400 : ((type === 'flash') ? 1700 : 2100);
+
+            activeGrenades.push({
+                mesh: grenadeMesh,
+                type: type,
+                vel: velocity,
+                birthTime: performance.now(),
+                fuseMs: fuseMs,
+                isMine: true
+            });
+
+            if (ws && ws.readyState === 1) {
+                ws.send(JSON.stringify({
+                    type: 'grenade_thrown',
+                    grenadeType: type,
+                    origin: { x: muzzle.x, y: muzzle.y, z: muzzle.z },
+                    velocity: { x: velocity.x, y: velocity.y, z: velocity.z }
+                }));
+            }
+            showToast(`<i data-lucide="bomb"></i> Granada ${type.toUpperCase()} lançada!`);
+        }
+
+        function spawnRemoteGrenade(data) {
+            const origin = data.origin;
+            const velocity = new THREE.Vector3(data.velocity.x, data.velocity.y, data.velocity.z);
+            const type = data.grenadeType || 'he';
+
+            let gMesh;
+            if (type === 'he') {
+                gMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.13, 10, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.4, metalness: 0.5 })
+                );
+            } else if (type === 'flash') {
+                gMesh = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.08, 0.24, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.8 })
+                );
+            } else {
+                gMesh = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.08, 0.26, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.4 })
+                );
+            }
+            gMesh.position.set(origin.x, origin.y, origin.z);
+            scene.add(gMesh);
+
+            const fuseMs = (type === 'smoke') ? 1400 : ((type === 'flash') ? 1700 : 2100);
+
+            activeGrenades.push({
+                mesh: gMesh,
+                type: type,
+                vel: velocity,
+                birthTime: performance.now(),
+                fuseMs: fuseMs,
+                isMine: false
+            });
+        }
+
+        function triggerFlashbang(x, y, z) {
+            playSound('grenade_flash_pop');
+            if (!localPlayer || !localStats.isAlive) return;
+
+            const myPos = localPlayer.position;
+            const dist = myPos.distanceTo(new THREE.Vector3(x, y, z));
+            if (dist > 35) return;
+
+            // Bloqueio por paredes
+            if (checkAnyWallCollision((myPos.x + x) / 2, (myPos.z + z) / 2, 0.4)) {
+                return;
+            }
+
+            const forward = camera.getWorldDirection(new THREE.Vector3()).normalize();
+            const toFlash = new THREE.Vector3(x, y, z).sub(camera.position).normalize();
+            const dot = forward.dot(toFlash);
+
+            let intensity = Math.max(0.2, 1.0 - (dist / 35));
+            if (dot < 0) {
+                // Costas voltadas para a explosão
+                intensity *= 0.35;
+            }
+
+            const overlay = document.getElementById('flashbang-overlay');
+            if (overlay) {
+                overlay.style.transition = 'opacity 0.05s ease-in';
+                overlay.style.opacity = intensity.toString();
+                setTimeout(() => {
+                    overlay.style.transition = 'opacity 4.5s ease-out';
+                    overlay.style.opacity = '0';
+                }, 90);
+            }
+            playTinnitusTone(intensity);
+        }
+
+        function spawnSmokeCloud(x, y, z, duration = 15) {
+            playSound('grenade_smoke_hiss');
+            const group = new THREE.Group();
+            group.position.set(x, y + 0.6, z);
+
+            const smokeMat = new THREE.MeshStandardMaterial({
+                color: 0x94a3b8,
+                transparent: true,
+                opacity: 0.88,
+                roughness: 0.95,
+                depthWrite: false
+            });
+
+            const puffs = [];
+            for (let i = 0; i < 16; i++) {
+                const puff = new THREE.Mesh(new THREE.SphereGeometry(1.5 + Math.random() * 0.8, 8, 8), smokeMat.clone());
+                puff.position.set(
+                    (Math.random() - 0.5) * 2.8,
+                    0.2 + Math.random() * 2.0,
+                    (Math.random() - 0.5) * 2.8
+                );
+                puff.userData = {
+                    baseScale: 0.2,
+                    targetScale: 2.2 + Math.random() * 1.4,
+                    rotSpeed: (Math.random() - 0.5) * 0.4
+                };
+                group.add(puff);
+                puffs.push(puff);
+            }
+            scene.add(group);
+
+            activeSmokeClouds.push({
+                group: group,
+                puffs: puffs,
+                birthTime: performance.now(),
+                durationMs: duration * 1000
+            });
+        }
+
+        function handleGrenadeExplosionEvent(data) {
+            const { grenadeType, x, y, z } = data;
+            if (grenadeType === 'he') {
+                spawnExplosionEffect(x, y, z);
+            } else if (grenadeType === 'flash') {
+                triggerFlashbang(x, y, z);
+            } else if (grenadeType === 'smoke') {
+                spawnSmokeCloud(x, y, z, data.duration || 15);
+            }
+        }
+
         const activeRockets = [];
 
         function fireWeapon() {
@@ -3085,7 +3704,7 @@
                     if (localPlayer.position.distanceTo(t.position) < 5.0) {
                         localStats.wood += 20;
                         updateHUD();
-                        showToast(`🪵 +20 Madeira!`);
+                        showToast(`<i data-lucide="box"></i> +20 Madeira!`);
                         spawnDamageNumber(t.position.x, t.position.y + 2, t.position.z, 25, false);
                     }
                 });
@@ -3149,7 +3768,18 @@
                 localStats.shield = Math.min(100, localStats.shield + 50);
                 localStats.health = Math.min(100, localStats.health + 25);
                 updateHUD();
-                showToast("🧪 +50 Escudo & +25 Vida Restaurados!");
+                showToast('<i data-lucide="flask-conical"></i> +50 Escudo & +25 Vida Restaurados!');
+            }
+
+            // ------------------------------------
+            // SLOTS 7, 8, 9: GRANADAS TÁTICAS
+            // ------------------------------------
+            else if (slot === 7) {
+                throwGrenade('he');
+            } else if (slot === 8) {
+                throwGrenade('flash');
+            } else if (slot === 9) {
+                throwGrenade('smoke');
             }
         }
 
@@ -3380,7 +4010,8 @@
 
         function showToast(msg) {
             const toast = document.getElementById('game-toast');
-            toast.innerText = msg;
+            toast.innerHTML = msg;
+            refreshIcons();
             toast.style.opacity = '1';
             clearTimeout(toast.timeout);
             toast.timeout = setTimeout(() => toast.style.opacity = '0', 2500);
@@ -3527,13 +4158,99 @@
             });
         });
 
-        // ENTRAR NO JOGO (START GAME)
+        // CONTROLES DE SALAS NO LOBBY
+        const btnToggleCreate = document.getElementById('btn-toggle-create-room');
+        if (btnToggleCreate) {
+            btnToggleCreate.addEventListener('click', () => {
+                const panel = document.getElementById('create-room-panel');
+                if (panel) {
+                    panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+                    refreshIcons();
+                }
+            });
+        }
+
+        const btnSubmitCreate = document.getElementById('btn-submit-create-room');
+        if (btnSubmitCreate) {
+            btnSubmitCreate.addEventListener('click', () => {
+                const name = (document.getElementById('new-room-name-input').value || '').trim() || 'Minha Sala';
+                const botCount = parseInt(document.getElementById('new-room-bots-select').value, 10);
+                const targetKills = parseInt(document.getElementById('new-room-kills-select').value, 10);
+
+                if (ws && ws.readyState === 1) {
+                    ws.send(JSON.stringify({
+                        type: 'create_room',
+                        name: name,
+                        botCount: botCount,
+                        targetKills: targetKills
+                    }));
+                }
+            });
+        }
+
+        // TELA CHEIA MOBILE
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) elem.requestFullscreen().catch(() => {});
+                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen().catch(() => {});
+                else if (elem.msRequestFullscreen) elem.msRequestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen().catch(() => {});
+            }
+        }
+
+        const btnMobFs = document.getElementById('btn-mobile-fullscreen');
+        if (btnMobFs) {
+            btnMobFs.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFullscreen();
+            });
+            btnMobFs.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFullscreen();
+            }, { passive: false });
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const isFs = !!document.fullscreenElement;
+            const fsIcon = document.getElementById('fs-icon');
+            if (fsIcon) {
+                fsIcon.setAttribute('data-lucide', isFs ? 'minimize' : 'maximize');
+                refreshIcons();
+            }
+        });
+
+        // BOTÃO DE GRANADA MOBILE
+        const btnMobGrenade = document.getElementById('btn-mobile-grenade');
+        if (btnMobGrenade) {
+            btnMobGrenade.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (localStats.activeSlot >= 7 && localStats.activeSlot <= 9) {
+                    const gType = localStats.activeSlot === 7 ? 'he' : (localStats.activeSlot === 8 ? 'flash' : 'smoke');
+                    throwGrenade(gType);
+                } else {
+                    throwGrenade('he');
+                }
+            }, { passive: false });
+        }
+
+        // ENTRAR NO JOGO (START GAME NA SALA SELECIONADA)
         document.getElementById('join-game-btn').addEventListener('click', () => {
             const nameInput = document.getElementById('player-name-input').value.trim();
             if (nameInput) myName = nameInput;
 
             if (ws && ws.readyState === 1) {
-                ws.send(JSON.stringify({ type: 'set_bot_count', count: selectedBotCount }));
+                ws.send(JSON.stringify({
+                    type: 'join_room',
+                    roomId: selectedRoomId,
+                    name: myName,
+                    team: myTeam,
+                    skinColor: mySkin
+                }));
             }
 
             // Salva na memória do navegador
@@ -3544,12 +4261,12 @@
             // Atualiza tag do meu time no HUD
             const myTeamPill = document.getElementById('my-team-pill');
             if (myTeam === 'red') {
-                myTeamPill.innerHTML = `<span>🔴</span> TIME VERMELHO`;
+                myTeamPill.innerHTML = `<i data-lucide="shield" style="color:#ef4444;"></i> TIME VERMELHO`; refreshIcons();
                 myTeamPill.style.background = 'rgba(220, 38, 38, 0.35)';
                 myTeamPill.style.borderColor = '#ef4444';
                 myTeamPill.style.color = '#fecaca';
             } else {
-                myTeamPill.innerHTML = `<span>🔵</span> TIME AZUL`;
+                myTeamPill.innerHTML = `<i data-lucide="shield" style="color:#38bdf8;"></i> TIME AZUL`; refreshIcons();
                 myTeamPill.style.background = 'rgba(37, 99, 235, 0.35)';
                 myTeamPill.style.borderColor = '#38bdf8';
                 myTeamPill.style.color = '#bae6fd';
@@ -3576,7 +4293,7 @@
             if (!isTouchDevice) {
                 try { canvas.requestPointerLock(); } catch(e){}
             }
-            showToast(`🚀 Batalha iniciada! Você está no Time [${myTeam.toUpperCase()}] no chão.`);
+            showToast(`<i data-lucide="swords"></i> Batalha iniciada! Você está no Time [${myTeam.toUpperCase()}] no chão.`);
         });
 
         // REINICIAR A ILHA APENAS PARA O USUÁRIO (RESPAWN SOLO NO CHÃO)
@@ -3614,7 +4331,7 @@
             if (!isTouchDevice) {
                 try { canvas.requestPointerLock(); } catch(e){}
             }
-            showToast("🪂 Você renasceu no chão na base do seu time!");
+            showToast('<i data-lucide="rotate-ccw"></i> Você renasceu no chão na base do seu time!');
         }
 
         document.getElementById('btn-victory-restart').addEventListener('click', requestRespawnSolo);
@@ -3638,7 +4355,7 @@
             if (!isTouchDevice) {
                 try { canvas.requestPointerLock(); } catch(e){}
             }
-            showToast("👁️ Modo Espectador ativado! Pressione R para renascer na base.");
+            showToast('<i data-lucide="eye"></i> Modo Espectador ativado! Pressione R para renascer na base.');
         });
 
         document.addEventListener('pointerlockchange', () => {
@@ -3805,7 +4522,7 @@
                 const type = buildCycle[buildCycleIdx % buildCycle.length];
                 buildCycleIdx++;
                 buildStructure(type);
-                showToast(`🧱 Construção: ${type.toUpperCase()}!`);
+                showToast(`<i data-lucide="square"></i> Construção: ${type.toUpperCase()}!`);
             }, { passive: false });
         }
 
@@ -3877,6 +4594,17 @@
             if (e.key === '4') selectSlot(4);
             if (e.key === '5') selectSlot(5);
             if (e.key === '6') selectSlot(6);
+            if (e.key === '7') selectSlot(7);
+            if (e.key === '8') selectSlot(8);
+            if (e.key === '9') selectSlot(9);
+            if (e.code === 'KeyG') {
+                if (localStats.activeSlot >= 7 && localStats.activeSlot <= 9) {
+                    const gType = localStats.activeSlot === 7 ? 'he' : (localStats.activeSlot === 8 ? 'flash' : 'smoke');
+                    throwGrenade(gType);
+                } else {
+                    throwGrenade('he');
+                }
+            }
 
             if (e.code === 'KeyZ') buildStructure('wall');
             if (e.code === 'KeyX') buildStructure('ramp');
@@ -3924,7 +4652,7 @@
             });
         }
 
-        for (let i = 1; i <= 6; i++) {
+        for (let i = 1; i <= 9; i++) {
             const sl = document.getElementById(`slot-${i}`);
             if (sl) sl.addEventListener('click', () => selectSlot(i));
         }
@@ -3945,6 +4673,75 @@
             const now = performance.now();
             const dt = Math.min((now - lastTime) / 1000, 0.1);
             lastTime = now;
+
+            // FÍSICA E EXPLOSÃO DE GRANADAS
+            for (let i = activeGrenades.length - 1; i >= 0; i--) {
+                const g = activeGrenades[i];
+                g.mesh.position.addScaledVector(g.vel, dt);
+                g.vel.y -= 22 * dt; // Gravidade
+                g.mesh.rotation.x += 6 * dt;
+                g.mesh.rotation.z += 4 * dt;
+
+                const groundY = getGroundHeight(g.mesh.position.x, g.mesh.position.z);
+                if (g.mesh.position.y <= groundY + 0.15) {
+                    g.mesh.position.y = groundY + 0.15;
+                    g.vel.y = -g.vel.y * 0.45;
+                    g.vel.x *= 0.72;
+                    g.vel.z *= 0.72;
+                }
+
+                if (checkAnyWallCollision(g.mesh.position.x, g.mesh.position.z, 0.35)) {
+                    g.vel.x = -g.vel.x * 0.5;
+                    g.vel.z = -g.vel.z * 0.5;
+                }
+
+                if (now - g.birthTime >= g.fuseMs) {
+                    scene.remove(g.mesh);
+                    if (g.isMine) {
+                        if (ws && ws.readyState === 1) {
+                            ws.send(JSON.stringify({
+                                type: 'grenade_exploded',
+                                grenadeType: g.type,
+                                x: g.mesh.position.x,
+                                y: g.mesh.position.y,
+                                z: g.mesh.position.z
+                            }));
+                        }
+                        if (g.type === 'he') {
+                            spawnExplosionEffect(g.mesh.position.x, g.mesh.position.y, g.mesh.position.z);
+                        } else if (g.type === 'flash') {
+                            triggerFlashbang(g.mesh.position.x, g.mesh.position.y, g.mesh.position.z);
+                        } else if (g.type === 'smoke') {
+                            spawnSmokeCloud(g.mesh.position.x, g.mesh.position.y, g.mesh.position.z, 15);
+                        }
+                    }
+                    activeGrenades.splice(i, 1);
+                }
+            }
+
+            // SIMULAÇÃO E DISPERSÃO DE NUVENS DE FUMAÇA
+            for (let i = activeSmokeClouds.length - 1; i >= 0; i--) {
+                const sc = activeSmokeClouds[i];
+                const age = (now - sc.birthTime) / 1000;
+                const progress = age / (sc.durationMs / 1000);
+
+                sc.puffs.forEach(p => {
+                    p.rotation.y += p.userData.rotSpeed * dt;
+                    if (age < 2.0) {
+                        const curS = THREE.MathUtils.lerp(p.userData.baseScale, p.userData.targetScale, age / 2.0);
+                        p.scale.setScalar(curS);
+                    }
+                    if (progress > 0.8) {
+                        const fade = (1.0 - progress) / 0.2;
+                        p.material.opacity = 0.88 * Math.max(0, fade);
+                    }
+                });
+
+                if (age >= sc.durationMs / 1000) {
+                    scene.remove(sc.group);
+                    activeSmokeClouds.splice(i, 1);
+                }
+            }
 
             // Rotação dos cristais das bases
             if (blueBase && blueBase.children[3]) blueBase.children[3].rotation.y += dt * 0.8;
@@ -4075,7 +4872,7 @@
                         localPlayer.position.z = (localPlayer.position.z / playerDist) * 115;
                     }
 
-                    // AVISO E EFEITO VISUAL DE GÁS TÓXICO / TEMPESTADE (RELATIVO AO CENTRO MÓVEL)
+                    // AVISO E EFEITO VISUAL DE GÁS TÓXICO (RELATIVO AO CENTRO MÓVEL)
                     const distToStormCenter = Math.hypot(localPlayer.position.x - currentStormX, localPlayer.position.z - currentStormZ);
                     const inToxicGas = (distToStormCenter > currentStormRadius);
                     const gasOverlay = document.getElementById('toxic-gas-overlay');
@@ -4269,6 +5066,10 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        // Conecta ao servidor imediatamente para listar salas em tempo real
+        connectWebSocket();
+        refreshIcons();
     </script>
 </body>
 </html>
