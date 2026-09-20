@@ -904,6 +904,210 @@
             font-size: 12px;
             font-weight: 800;
         }
+
+        /* OVERLAYS E ALERTA DE GÁS TÓXICO / TEMPESTADE */
+        #toxic-gas-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 120;
+            box-shadow: inset 0 0 110px 45px rgba(147, 51, 234, 0.78), inset 0 0 50px rgba(192, 132, 252, 0.5);
+            animation: gasPulse 1.2s infinite ease-in-out;
+            display: none;
+        }
+        @keyframes gasPulse {
+            0%, 100% { opacity: 0.65; }
+            50% { opacity: 0.95; }
+        }
+        #toxic-gas-warning {
+            position: fixed;
+            top: 88px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(88, 28, 135, 0.95);
+            border: 2px solid #e9d5ff;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 900;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.85);
+            pointer-events: none;
+            z-index: 121;
+            display: none;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        /* CONTROLES MOBILE TOUCH (JOYSTICK + BOTÕES) */
+        #mobile-controls-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 110;
+            display: none;
+        }
+
+        #mobile-joystick-base {
+            position: absolute;
+            bottom: 30px;
+            left: 25px;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.65);
+            border: 2px solid rgba(56, 189, 248, 0.5);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #mobile-joystick-knob {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #38bdf8 0%, #0284c7 100%);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.9);
+            pointer-events: none;
+            transition: transform 0.05s ease-out;
+        }
+
+        #mobile-action-buttons {
+            position: absolute;
+            bottom: 25px;
+            right: 20px;
+            width: 220px;
+            height: 220px;
+            pointer-events: none;
+        }
+
+        .mobile-btn {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 900;
+            color: #ffffff;
+            cursor: pointer;
+            pointer-events: auto;
+            touch-action: none;
+            user-select: none;
+            transition: transform 0.1s, filter 0.1s;
+        }
+
+        .mobile-btn:active {
+            transform: scale(0.90);
+            filter: brightness(1.25);
+        }
+
+        #btn-mobile-fire {
+            bottom: 8px;
+            right: 8px;
+            width: 74px;
+            height: 74px;
+            background: radial-gradient(circle, #ef4444 0%, #b91c1c 100%);
+            border: 3px solid #fecaca;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.85);
+            font-size: 32px;
+        }
+
+        #btn-mobile-jump {
+            bottom: 96px;
+            right: 12px;
+            width: 56px;
+            height: 56px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+            font-size: 26px;
+        }
+
+        #btn-mobile-build {
+            bottom: 12px;
+            right: 96px;
+            width: 56px;
+            height: 56px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+            font-size: 26px;
+        }
+
+        #btn-mobile-sprint {
+            bottom: 92px;
+            right: 86px;
+            width: 50px;
+            height: 50px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+            font-size: 22px;
+        }
+
+        #btn-mobile-cam {
+            bottom: 160px;
+            right: 36px;
+            width: 46px;
+            height: 46px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid #c084fc;
+            box-shadow: 0 0 12px rgba(192, 132, 252, 0.6);
+            font-size: 20px;
+        }
+
+        /* Suporte Mobile e Telas Menores */
+        @media (max-width: 900px), (pointer: coarse) {
+            #mobile-controls-container.active-game {
+                display: block !important;
+            }
+            .build-menu, .quick-action-bar {
+                display: none !important; /* No mobile usamos botões de ação dedicados */
+            }
+            .weapon-hud {
+                right: auto !important;
+                left: 50% !important;
+                bottom: 120px !important;
+                transform: translateX(-50%) scale(0.68) !important;
+                transform-origin: bottom center !important;
+                align-items: center !important;
+                z-index: 115;
+            }
+            .top-hud {
+                top: 8px;
+                right: 8px;
+                gap: 4px;
+                transform: scale(0.80);
+                transform-origin: top right;
+            }
+            .target-score-wrapper {
+                top: 8px;
+                transform: translateX(-50%) scale(0.80);
+            }
+            .player-status {
+                top: 65px;
+                left: 8px;
+                bottom: auto;
+                transform: scale(0.75);
+                transform-origin: top left;
+            }
+            .lobby-box {
+                max-width: 94vw;
+                padding: 20px 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -959,6 +1163,9 @@
         </div>
         <div class="stat-badge alive" style="border-color: #4ade80;">
             <span>👥</span> VIVOS: <span id="alive-count" style="color: #4ade80;">1</span>
+        </div>
+        <div class="stat-badge storm" style="border-color: #a855f7; background: rgba(168, 85, 247, 0.25);">
+            <span>🟣</span> GÁS: <span id="hud-storm-radius" style="color: #d8b4fe;">95m</span>
         </div>
     </div>
 
@@ -1181,6 +1388,27 @@
             </div>
 
             <button class="join-btn" id="join-game-btn">🚀 ENTRAR NA BATALHA!</button>
+        </div>
+    </div>
+
+    <!-- OVERLAYS E ALERTA DE GÁS TÓXICO / TEMPESTADE -->
+    <div id="toxic-gas-overlay"></div>
+    <div id="toxic-gas-warning">⚠️ PERIGO: VOCÊ ESTÁ NO GÁS TÓXICO! DANO CONTÍNUO</div>
+
+    <!-- CONTROLES MOBILE TOUCH (JOYSTICK + BOTÕES DE AÇÃO) -->
+    <div id="mobile-controls-container">
+        <!-- Joystick Virtual Analógico -->
+        <div id="mobile-joystick-base">
+            <div id="mobile-joystick-knob"></div>
+        </div>
+
+        <!-- Botões de Ação Mobile -->
+        <div id="mobile-action-buttons">
+            <button id="btn-mobile-cam" class="mobile-btn" title="Alternar Câmera (1ª / 3ª Pessoa)">👁️</button>
+            <button id="btn-mobile-sprint" class="mobile-btn" title="Correr / Disparar">🏃</button>
+            <button id="btn-mobile-jump" class="mobile-btn" title="Pular">🦘</button>
+            <button id="btn-mobile-build" class="mobile-btn" title="Construir Estrutura">🧱</button>
+            <button id="btn-mobile-fire" class="mobile-btn" title="Atirar / Golpear">🔫</button>
         </div>
     </div>
 
@@ -1462,13 +1690,15 @@
         ocean.receiveShadow = true;
         scene.add(ocean);
 
-        // Barreira da Tempestade
+        // Barreira da Tempestade / Gás Tóxico
+        let currentStormRadius = 95;
+        let targetStormRadius = 95;
         const BARRIER_RADIUS = 100;
         const barrierGeo = new THREE.CylinderGeometry(BARRIER_RADIUS, BARRIER_RADIUS, 90, 48, 1, true);
         const barrierMat = new THREE.MeshBasicMaterial({
             color: 0x9333ea,
             transparent: true,
-            opacity: 0.35,
+            opacity: 0.38,
             side: THREE.DoubleSide
         });
         const barrierMesh = new THREE.Mesh(barrierGeo, barrierMat);
@@ -1479,7 +1709,7 @@
             color: 0xc084fc,
             wireframe: true,
             transparent: true,
-            opacity: 0.4
+            opacity: 0.45
         });
         const barrierWire = new THREE.Mesh(barrierGeo, barrierWireMat);
         barrierWire.position.y = 35;
@@ -2291,6 +2521,12 @@
                     if (data.builds) {
                         data.builds.forEach(b => spawnBuildMesh(b));
                     }
+                    if (data.stormRadius !== undefined) {
+                        currentStormRadius = data.stormRadius;
+                        targetStormRadius = data.stormRadius;
+                        const hudStorm = document.getElementById('hud-storm-radius');
+                        if (hudStorm) hudStorm.innerText = `${Math.round(data.stormRadius)}m`;
+                    }
                 }
 
                 if (data.type === 'player_joined') {
@@ -2379,22 +2615,33 @@
                         spawnEliminationParticles(localPlayer.position.x, localPlayer.position.y, localPlayer.position.z);
                         document.getElementById('killer-name-display').innerText = `Eliminado por ${data.killerName} [Time ${data.killerTeam.toUpperCase()}]`;
                         document.getElementById('eliminated-screen').style.display = 'flex';
-                        document.exitPointerLock();
+                        if (document.exitPointerLock) {
+                            try { document.exitPointerLock(); } catch(e){}
+                        }
                     }
 
                     if (data.winningTeam) {
-                        const iWon = (data.winningTeam === myTeam);
-                        playSound('victory');
-                        document.getElementById('victory-title').innerText = iWon ? '#1 VICTORY ROYALE!' : 'FIM DA RODADA!';
-                        document.getElementById('victory-subtitle').innerText = `🏆 O TIME ${data.winningTeam.toUpperCase()} VENCEU COM 25 KILLS! 🏆`;
-                        document.getElementById('victory-screen').style.display = 'flex';
-                        document.exitPointerLock();
+                        handleRoundEnded(data);
                     }
                 }
 
                 if (data.type === 'score_update') {
                     if (data.teamScores) updateTeamScores(data.teamScores);
                     if (data.players) updateLeaderboardUI(data.players);
+                }
+
+                if (data.type === 'storm_update') {
+                    targetStormRadius = data.radius;
+                    const hudStorm = document.getElementById('hud-storm-radius');
+                    if (hudStorm) hudStorm.innerText = `${Math.round(data.radius)}m`;
+                }
+
+                if (data.type === 'round_ended') {
+                    handleRoundEnded(data);
+                }
+
+                if (data.type === 'round_restarted') {
+                    handleRoundRestarted(data);
                 }
 
                 if (data.type === 'player_respawned') {
@@ -2541,6 +2788,7 @@
             }
         }
 
+        const buildMeshes = [];
         function spawnBuildMesh(b) {
             let geo;
             if (b.buildType === 'wall') geo = new THREE.BoxGeometry(3.5, 3.0, 0.25);
@@ -2554,6 +2802,75 @@
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             scene.add(mesh);
+            buildMeshes.push(mesh);
+        }
+
+        function clearAllBuilds() {
+            buildMeshes.forEach(m => scene.remove(m));
+            buildMeshes.length = 0;
+        }
+
+        let roundRestartTimer = null;
+        function handleRoundEnded(data) {
+            const iWon = (data.winningTeam === myTeam);
+            playSound('victory');
+            document.getElementById('victory-title').innerText = iWon ? '#1 VICTORY ROYALE!' : 'FIM DA RODADA!';
+            document.getElementById('victory-subtitle').innerHTML = `🏆 O TIME <span style="color:${data.winningTeam==='red'?'#ef4444':'#38bdf8'}; font-weight:900;">${data.winningTeam.toUpperCase()}</span> VENCEU COM 25 KILLS! 🏆<br><span id="restart-countdown" style="font-size:16px; color:#facc15; display:block; margin-top:10px;">Nova rodada em ${data.countdown || 5}s...</span>`;
+            document.getElementById('victory-screen').style.display = 'flex';
+            if (document.exitPointerLock) {
+                try { document.exitPointerLock(); } catch(e){}
+            }
+
+            let count = data.countdown || 5;
+            if (roundRestartTimer) clearInterval(roundRestartTimer);
+            roundRestartTimer = setInterval(() => {
+                count--;
+                const elem = document.getElementById('restart-countdown');
+                if (elem) elem.innerText = `Nova rodada em ${count}s...`;
+                if (count <= 0) {
+                    clearInterval(roundRestartTimer);
+                    roundRestartTimer = null;
+                }
+            }, 1000);
+        }
+
+        function handleRoundRestarted(data) {
+            if (roundRestartTimer) {
+                clearInterval(roundRestartTimer);
+                roundRestartTimer = null;
+            }
+            document.getElementById('victory-screen').style.display = 'none';
+            document.getElementById('eliminated-screen').style.display = 'none';
+            clearAllBuilds();
+
+            if (data.teamScores) updateTeamScores(data.teamScores);
+            if (data.stormRadius !== undefined) {
+                currentStormRadius = data.stormRadius;
+                targetStormRadius = data.stormRadius;
+                const hudStorm = document.getElementById('hud-storm-radius');
+                if (hudStorm) hudStorm.innerText = `${Math.round(data.stormRadius)}m`;
+            }
+
+            localStats.health = 100;
+            localStats.shield = 100;
+            localStats.kills = 0;
+            localStats.deaths = 0;
+            localStats.isAlive = true;
+            localStats.isSpectating = false;
+            updateHUD();
+
+            if (data.players) {
+                const myData = data.players.find(p => p.id === myId);
+                if (myData && localPlayer) {
+                    localPlayer.position.set(myData.x, myData.y, myData.z);
+                    localPlayer.visible = true;
+                    localPlayer.userData.glider.visible = false;
+                }
+                updateLeaderboardUI(data.players);
+            }
+
+            showToast("🔥 NOVA RODADA INICIADA! ILHA E PLACAR REINICIADOS!");
+            playSound('victory');
         }
 
         // ==========================================
@@ -3002,8 +3319,13 @@
             scene.add(localPlayer);
 
             document.getElementById('lobby-screen').style.display = 'none';
+            const mobContainer = document.getElementById('mobile-controls-container');
+            if (mobContainer) mobContainer.classList.add('active-game');
+
             connectWebSocket();
-            canvas.requestPointerLock();
+            if (!isTouchDevice) {
+                try { canvas.requestPointerLock(); } catch(e){}
+            }
             showToast(`🚀 Batalha iniciada! Você está no Time [${myTeam.toUpperCase()}] no chão.`);
         });
 
@@ -3039,7 +3361,9 @@
                 localPlayer.userData.glider.visible = false;
             }
             updateHUD();
-            canvas.requestPointerLock();
+            if (!isTouchDevice) {
+                try { canvas.requestPointerLock(); } catch(e){}
+            }
             showToast("🪂 Você renasceu no chão na base do seu time!");
         }
 
@@ -3061,7 +3385,9 @@
 
             localStats.isSpectating = true;
             spectatorCameraPos.set(0, 25, 0);
-            canvas.requestPointerLock();
+            if (!isTouchDevice) {
+                try { canvas.requestPointerLock(); } catch(e){}
+            }
             showToast("👁️ Modo Espectador ativado! Pressione R para renascer na base.");
         });
 
@@ -3071,6 +3397,185 @@
 
         let yaw = 0;
         let pitch = 0.05;
+
+        // ==========================================
+        // SISTEMA DE CONTROLES MOBILE TOUCH
+        // ==========================================
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 900);
+        if (isTouchDevice) {
+            const mobContainer = document.getElementById('mobile-controls-container');
+            if (mobContainer) mobContainer.style.display = 'block';
+        }
+
+        let mobileMoveX = 0;
+        let mobileMoveY = 0;
+        let joystickTouchId = null;
+
+        const joyBase = document.getElementById('mobile-joystick-base');
+        const joyKnob = document.getElementById('mobile-joystick-knob');
+
+        if (joyBase && joyKnob) {
+            function handleJoyTouch(e) {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    if (e.type === 'touchstart' && joystickTouchId === null) {
+                        joystickTouchId = t.identifier;
+                    }
+                    if (t.identifier === joystickTouchId) {
+                        const rect = joyBase.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        const dx = t.clientX - centerX;
+                        const dy = t.clientY - centerY;
+                        const maxR = 44;
+                        const dist = Math.hypot(dx, dy);
+                        const clampedDist = Math.min(dist, maxR);
+                        const angle = Math.atan2(dy, dx);
+                        const cx = Math.cos(angle) * clampedDist;
+                        const cy = Math.sin(angle) * clampedDist;
+
+                        joyKnob.style.transform = `translate(${cx}px, ${cy}px)`;
+                        mobileMoveX = cx / maxR;
+                        mobileMoveY = cy / maxR;
+
+                        // Empurrão forte para frente aciona corrida rápida
+                        if (mobileMoveY < -0.85) {
+                            setSprintState(true);
+                        } else if (isSprinting && mobileMoveY > -0.4) {
+                            setSprintState(false);
+                        }
+                    }
+                }
+            }
+
+            function handleJoyEnd(e) {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joystickTouchId) {
+                        joystickTouchId = null;
+                        joyKnob.style.transform = 'translate(0px, 0px)';
+                        mobileMoveX = 0;
+                        mobileMoveY = 0;
+                    }
+                }
+            }
+
+            joyBase.addEventListener('touchstart', (e) => { e.preventDefault(); handleJoyTouch(e); }, { passive: false });
+            window.addEventListener('touchmove', (e) => { if (joystickTouchId !== null) handleJoyTouch(e); }, { passive: true });
+            window.addEventListener('touchend', handleJoyEnd, { passive: true });
+            window.addEventListener('touchcancel', handleJoyEnd, { passive: true });
+        }
+
+        // Toque na metade direita da tela para mirar a câmera (Touch Aim)
+        let lookTouchId = null;
+        let lastLookX = 0;
+        let lastLookY = 0;
+
+        window.addEventListener('touchstart', (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                if (t.clientX > window.innerWidth * 0.35 && lookTouchId === null) {
+                    const target = document.elementFromPoint(t.clientX, t.clientY);
+                    if (target && (target.closest('.mobile-btn') || target.closest('.slot') || target.closest('button') || target.closest('input') || target.closest('#lobby-screen') || target.closest('#victory-screen') || target.closest('#eliminated-screen'))) {
+                        continue;
+                    }
+                    lookTouchId = t.identifier;
+                    lastLookX = t.clientX;
+                    lastLookY = t.clientY;
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (lookTouchId === null) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                if (t.identifier === lookTouchId) {
+                    const dx = t.clientX - lastLookX;
+                    const dy = t.clientY - lastLookY;
+                    lastLookX = t.clientX;
+                    lastLookY = t.clientY;
+
+                    yaw -= dx * 0.0055;
+                    pitch -= dy * 0.0045;
+                    pitch = Math.max(-0.75, Math.min(0.75, pitch));
+                    if (localPlayer) localPlayer.rotation.y = yaw;
+                }
+            }
+        }, { passive: true });
+
+        function handleLookEnd(e) {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === lookTouchId) {
+                    lookTouchId = null;
+                }
+            }
+        }
+        window.addEventListener('touchend', handleLookEnd, { passive: true });
+        window.addEventListener('touchcancel', handleLookEnd, { passive: true });
+
+        // Botões de Ação Mobile
+        let mobileFireInterval = null;
+        const btnMobFire = document.getElementById('btn-mobile-fire');
+        if (btnMobFire) {
+            btnMobFire.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fireWeapon();
+                if (!mobileFireInterval) {
+                    mobileFireInterval = setInterval(fireWeapon, 160);
+                }
+            }, { passive: false });
+            const stopMobFire = () => {
+                if (mobileFireInterval) {
+                    clearInterval(mobileFireInterval);
+                    mobileFireInterval = null;
+                }
+            };
+            btnMobFire.addEventListener('touchend', stopMobFire, { passive: true });
+            btnMobFire.addEventListener('touchcancel', stopMobFire, { passive: true });
+        }
+
+        let mobileJumpTrigger = false;
+        const btnMobJump = document.getElementById('btn-mobile-jump');
+        if (btnMobJump) {
+            btnMobJump.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                mobileJumpTrigger = true;
+            }, { passive: false });
+        }
+
+        const buildCycle = ['wall', 'ramp', 'floor'];
+        let buildCycleIdx = 0;
+        const btnMobBuild = document.getElementById('btn-mobile-build');
+        if (btnMobBuild) {
+            btnMobBuild.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const type = buildCycle[buildCycleIdx % buildCycle.length];
+                buildCycleIdx++;
+                buildStructure(type);
+                showToast(`🧱 Construção: ${type.toUpperCase()}!`);
+            }, { passive: false });
+        }
+
+        const btnMobSprint = document.getElementById('btn-mobile-sprint');
+        if (btnMobSprint) {
+            btnMobSprint.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSprintState(!isSprinting);
+            }, { passive: false });
+        }
+
+        const btnMobCam = document.getElementById('btn-mobile-cam');
+        if (btnMobCam) {
+            btnMobCam.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleCameraView();
+            }, { passive: false });
+        }
 
         window.addEventListener('mousemove', (e) => {
             if (!isLocked) return;
@@ -3273,14 +3778,19 @@
             } else if (localStats.isAlive && localPlayer) {
                 // JOGADOR VIVO NO CHÃO EM 3ª / 1ª PESSOA
                 const moveVec = new THREE.Vector3();
-                if (isLocked) {
+                if (isLocked || isTouchDevice) {
                     if (keys['KeyW']) moveVec.add(camDir);
                     if (keys['KeyS']) moveVec.sub(camDir);
                     if (keys['KeyD']) moveVec.add(camRight);
                     if (keys['KeyA']) moveVec.sub(camRight);
                 }
+                // Movimento por Joystick Virtual Mobile
+                if (mobileMoveX !== 0 || mobileMoveY !== 0) {
+                    moveVec.add(camDir.clone().multiplyScalar(-mobileMoveY));
+                    moveVec.add(camRight.clone().multiplyScalar(mobileMoveX));
+                }
 
-                const isMoving = moveVec.lengthSq() > 0;
+                const isMoving = moveVec.lengthSq() > 0.005;
                 let speed = isGliding ? 14.0 : 9.5;
                 if (isSprinting && isMoving && !isGliding) {
                     speed = 15.5; // Corrida rápida 63% mais veloz!
@@ -3307,13 +3817,19 @@
                         }
                     }
 
-                    // RESTRIÇÃO DA TEMPESTADE DA ILHA
+                    // RESTRIÇÃO MÁXIMA DA ILHA (OCEANO INFINITO)
                     const playerDist = Math.hypot(localPlayer.position.x, localPlayer.position.z);
-                    if (playerDist > BARRIER_RADIUS - 1.5) {
-                        localPlayer.position.x = (localPlayer.position.x / playerDist) * (BARRIER_RADIUS - 1.5);
-                        localPlayer.position.z = (localPlayer.position.z / playerDist) * (BARRIER_RADIUS - 1.5);
-                        showToast("⚡ BARREIRA DA TEMPESTADE! Fique na ilha.");
+                    if (playerDist > 115) {
+                        localPlayer.position.x = (localPlayer.position.x / playerDist) * 115;
+                        localPlayer.position.z = (localPlayer.position.z / playerDist) * 115;
                     }
+
+                    // AVISO E EFEITO VISUAL DE GÁS TÓXICO / TEMPESTADE
+                    const inToxicGas = (playerDist > currentStormRadius);
+                    const gasOverlay = document.getElementById('toxic-gas-overlay');
+                    const gasWarning = document.getElementById('toxic-gas-warning');
+                    if (gasOverlay) gasOverlay.style.display = inToxicGas ? 'block' : 'none';
+                    if (gasWarning) gasWarning.style.display = inToxicGas ? 'block' : 'none';
 
                     const groundY = getGroundHeight(localPlayer.position.x, localPlayer.position.z);
 
@@ -3326,9 +3842,10 @@
                             localPlayer.userData.glider.visible = false;
                         }
                     } else {
-                        if (keys['Space'] && isGrounded) {
+                        if ((keys['Space'] || mobileJumpTrigger) && isGrounded) {
                             playerVelY = 9.0;
                             isGrounded = false;
+                            mobileJumpTrigger = false;
                         }
                         playerVelY -= 24.0 * dt;
                         localPlayer.position.y += playerVelY * dt;
@@ -3440,11 +3957,21 @@
                     }
                 }
 
-            // Interpolação suave dos outros jogadores remotos
+            // Sincronização visual da barreira da tempestade (Gás Tóxico encolhendo)
+            currentStormRadius = THREE.MathUtils.lerp(currentStormRadius, targetStormRadius, 0.08);
+            const stormScale = Math.max(0.01, currentStormRadius / 100);
+            barrierMesh.scale.set(stormScale, 1, stormScale);
+            barrierWire.scale.set(stormScale, 1, stormScale);
+
+            // Interpolação suave dos outros jogadores remotos e bots com fixação precisa no chão
             remotePlayers.forEach(rp => {
                 if (rp.visible && rp.userData.isAlive) {
                     rp.position.lerp(rp.userData.targetPos, 0.25);
                     rp.rotation.y = THREE.MathUtils.lerp(rp.rotation.y, rp.userData.targetYaw, 0.25);
+                    if (!rp.userData.isGliding) {
+                        const groundY = getGroundHeight(rp.position.x, rp.position.z);
+                        rp.position.y = Math.max(rp.position.y, groundY);
+                    }
                 }
             });
 

@@ -104,21 +104,194 @@ function getPlayerList() {
     return list;
 }
 
+// Cálculo exato de elevação do terreno (idêntico ao cliente para evitar clipping)
+function getGroundHeight(x, z) {
+    const dist = Math.hypot(x, z);
+    let y = Math.sin(x * 0.045) * Math.cos(z * 0.045) * 5.0 + Math.cos(x * 0.02) * 2.5;
+    if (dist > 95) y -= (dist - 95) * 0.6;
+    return Math.max(y, -2.8);
+}
+
+// Spawns táticos espalhados por cada lado da ilha
+const BLUE_SPAWNS = [
+    { x: -50, z: -50 }, // Base Principal Azul
+    { x: -42, z: -18 }, // Colina Oeste
+    { x: -55, z: 12 },  // Bosque Noroeste
+    { x: -18, z: -48 }, // Encosta Sul
+    { x: -32, z: 32 },  // Platô Superior
+    { x: -26, z: -24 }  // Posto Avançado
+];
+
+const RED_SPAWNS = [
+    { x: 50, z: 50 },   // Base Principal Vermelha
+    { x: 42, z: 18 },   // Colina Leste
+    { x: 55, z: -12 },  // Bosque Sudeste
+    { x: 18, z: 48 },   // Encosta Norte
+    { x: 32, z: -32 },  // Platô Superior
+    { x: 26, z: 24 }    // Posto Avançado
+];
+
+let blueSpawnIdx = 0;
+let redSpawnIdx = 0;
+
 function getGroundSpawnForTeam(team) {
+    let pt;
     if (team === 'red') {
-        return {
-            x: 48 + (Math.random() - 0.5) * 8,
-            y: 0.8,
-            z: 48 + (Math.random() - 0.5) * 8
-        };
+        pt = RED_SPAWNS[redSpawnIdx % RED_SPAWNS.length];
+        redSpawnIdx++;
     } else {
-        return {
-            x: -48 + (Math.random() - 0.5) * 8,
-            y: 0.8,
-            z: -48 + (Math.random() - 0.5) * 8
-        };
+        pt = BLUE_SPAWNS[blueSpawnIdx % BLUE_SPAWNS.length];
+        blueSpawnIdx++;
+    }
+    const x = pt.x + (Math.random() - 0.5) * 6;
+    const z = pt.z + (Math.random() - 0.5) * 6;
+    const y = getGroundHeight(x, z);
+    return { x, y, z };
+}
+
+// ==========================================
+// SISTEMA DE TEMPESTADE / GÁS TÓXICO
+// ==========================================
+const stormState = {
+    radius: 95,
+    minRadius: 8,
+    shrinkSpeed: 0.32, // encolhe ~0.32m por segundo
+    lastUpdate: Date.now(),
+    lastDmgTick: Date.now()
+};
+
+let isRoundResetting = false;
+
+function resetRound(winningTeam) {
+    if (isRoundResetting) return;
+    isRoundResetting = true;
+    console.log(`🏆 [FIM DE RODADA] Time ${winningTeam.toUpperCase()} alcançou 25 eliminações! Reiniciando ilha em 5 segundos...`);
+
+    broadcast({
+        type: 'round_ended',
+        winningTeam: winningTeam,
+        blueScore: teamScores.blue,
+        redScore: teamScores.red,
+        countdown: 5
+    });
+
+    setTimeout(() => {
+        teamScores.blue = 0;
+        teamScores.red = 0;
+        worldBuilds.length = 0;
+        stormState.radius = 95;
+        stormState.lastUpdate = Date.now();
+        stormState.lastDmgTick = Date.now();
+
+        players.forEach(p => {
+            const spawn = getGroundSpawnForTeam(p.team);
+            p.hp = 100;
+            p.shield = 100;
+            p.kills = 0;
+            p.deaths = 0;
+            p.isAlive = true;
+            p.isGliding = false;
+            p.x = spawn.x;
+            p.y = spawn.y;
+            p.z = spawn.z;
+        });
+
+        isRoundResetting = false;
+        console.log(`🔥 [NOVA RODADA] Ilha, construções e placares totalmente reiniciados!`);
+
+        broadcast({
+            type: 'round_restarted',
+            teamScores: teamScores,
+            stormRadius: stormState.radius,
+            builds: [],
+            players: getPlayerList()
+        });
+    }, 5000);
+}
+
+function updateStorm() {
+    if (isRoundResetting) return;
+    const now = Date.now();
+    const dt = Math.min((now - stormState.lastUpdate) / 1000, 1.0);
+    stormState.lastUpdate = now;
+
+    // Encolhe a tempestade progressivamente
+    if (players.size > 0 && stormState.radius > stormState.minRadius) {
+        stormState.radius = Math.max(stormState.minRadius, stormState.radius - stormState.shrinkSpeed * dt);
+    }
+
+    // Broadcast periódico do raio da tempestade
+    broadcast({
+        type: 'storm_update',
+        radius: stormState.radius
+    });
+
+    // Dano de gás tóxico a cada 1 segundo em quem estiver fora do raio seguro
+    if (now - stormState.lastDmgTick >= 1000) {
+        stormState.lastDmgTick = now;
+        const stormDamage = Math.max(5, Math.floor(14 - (stormState.radius / 9)));
+
+        players.forEach(p => {
+            if (!p.isAlive) return;
+            const dist = Math.hypot(p.x, p.z);
+            if (dist > stormState.radius) {
+                // Dano direto na vida pelo gás tóxico
+                p.hp = Math.max(0, p.hp - stormDamage);
+
+                broadcast({
+                    type: 'player_damaged',
+                    targetId: p.id,
+                    attackerId: 'STORM',
+                    attackerName: 'Gás Tóxico',
+                    attackerTeam: 'storm',
+                    targetName: p.name,
+                    targetTeam: p.team,
+                    shield: p.shield,
+                    hp: p.hp,
+                    damage: stormDamage,
+                    isHeadshot: false,
+                    weapon: 'gas'
+                });
+
+                if (p.hp <= 0) {
+                    p.hp = 0;
+                    p.shield = 0;
+                    p.isAlive = false;
+                    p.deaths = (p.deaths || 0) + 1;
+
+                    console.log(`☠️ [GÁS TÓXICO] ${p.name} [${p.team}] sucumbiu ao gás tóxico!`);
+
+                    broadcast({
+                        type: 'player_eliminated',
+                        victimId: p.id,
+                        victimName: p.name,
+                        victimTeam: p.team,
+                        killerId: 'STORM',
+                        killerName: 'Gás Tóxico / Tempestade',
+                        killerTeam: 'storm',
+                        killerKills: 0,
+                        weapon: 'gas',
+                        aliveCount: getAliveCount(),
+                        teamScores: teamScores,
+                        winningTeam: null
+                    });
+
+                    broadcast({
+                        type: 'score_update',
+                        teamScores: teamScores,
+                        players: getPlayerList()
+                    });
+
+                    if (p.isBot) {
+                        const bState = botStates.get(p.id);
+                        if (bState) bState.respawnTime = now + 4500;
+                    }
+                }
+            }
+        });
     }
 }
+setInterval(updateStorm, 500);
 
 wss.on('connection', (ws) => {
     const playerId = 'P' + (nextPlayerId++);
@@ -179,7 +352,8 @@ wss.on('connection', (ws) => {
                     builds: worldBuilds,
                     aliveCount: getAliveCount(),
                     teamScores: teamScores,
-                    targetKills: TARGET_TEAM_KILLS
+                    targetKills: TARGET_TEAM_KILLS,
+                    stormRadius: stormState.radius
                 }));
 
                 // Avisa todos os outros
@@ -352,6 +526,11 @@ wss.on('connection', (ws) => {
                         teamScores: teamScores,
                         players: getPlayerList()
                     });
+
+                    // Se atingiu 25 vitórias, reinicia a rodada e a ilha
+                    if (winningTeam && !isRoundResetting) {
+                        resetRound(winningTeam);
+                    }
 
                     // Se a vítima eliminada for um Bot, agenda seu respawn
                     if (target.isBot) {
@@ -660,6 +839,11 @@ function updateBots() {
                             players: getPlayerList()
                         });
 
+                        // Se atingiu 25 vitórias, reinicia a rodada e a ilha
+                        if (winningTeam && !isRoundResetting) {
+                            resetRound(winningTeam);
+                        }
+
                         // Se o alvo for outro bot, programa o respawn dele
                         if (target.isBot) {
                             const tState = botStates.get(target.id);
@@ -687,12 +871,26 @@ function updateBots() {
             }
         }
 
-        // Confinamento na ilha
-        const curDist = Math.hypot(bot.x, bot.z);
-        if (curDist > 58.0) {
-            bot.x = (bot.x / curDist) * 58.0;
-            bot.z = (bot.z / curDist) * 58.0;
+        // Fuga do gás tóxico: se o bot estiver no gás ou perto da tempestade, corre em direção ao centro seguro
+        const botDist = Math.hypot(bot.x, bot.z);
+        if (botDist > Math.max(8.0, stormState.radius - 6.0)) {
+            const angleToCenter = Math.atan2(-bot.x, -bot.z);
+            bot.yaw = angleToCenter + Math.PI;
+            const speed = 7.5;
+            bot.x += Math.sin(angleToCenter) * speed * dt;
+            bot.z += Math.cos(angleToCenter) * speed * dt;
+            isMoving = true;
         }
+
+        // Confinamento nos limites da ilha
+        const curDist = Math.hypot(bot.x, bot.z);
+        if (curDist > 85.0) {
+            bot.x = (bot.x / curDist) * 85.0;
+            bot.z = (bot.z / curDist) * 85.0;
+        }
+
+        // ALTURA EXATA DO TERRENO: Garante que os bots NUNCA atravessem ou fiquem soterrados no chão!
+        bot.y = getGroundHeight(bot.x, bot.z);
 
         // Notifica movimento do bot aos clientes
         broadcast({
