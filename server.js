@@ -35,16 +35,32 @@ const server = http.createServer((req, res) => {
 
         const ext = path.extname(filePath).toLowerCase();
         const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+        const etag = `W/"${stats.size.toString(16)}-${stats.mtimeMs.toString(16)}"`;
+
+        // Se o cliente já tem a versão em cache e não foi modificada, retorna 304
+        if (req.headers['if-none-match'] === etag) {
+            res.writeHead(304, {
+                'ETag': etag,
+                'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400',
+                'Access-Control-Allow-Origin': '*'
+            });
+            return res.end();
+        }
+
+        // Cache eficiente para assets estáticos e revalidação limpa para HTML
+        let cacheControl = 'public, max-age=86400';
+        if (ext === '.html') {
+            cacheControl = 'no-cache';
+        } else if (req.url.includes('?v=') || req.url.includes('three.min.js')) {
+            cacheControl = 'public, max-age=604800, immutable';
+        }
 
         const headers = {
             'Content-Type': contentType,
             'Content-Length': stats.size,
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Surrogate-Control': 'no-store',
-            'Access-Control-Allow-Origin': '*',
-            'Clear-Site-Data': '"cache"'
+            'ETag': etag,
+            'Cache-Control': cacheControl,
+            'Access-Control-Allow-Origin': '*'
         };
 
         if (req.method === 'HEAD') {
@@ -835,6 +851,7 @@ class GameRoom {
 
     handleGrenadeExplosion(sender, data) {
         const { grenadeType, x, y, z } = data;
+        const senderWs = sender ? sender.ws : null;
 
         if (grenadeType === 'he') {
             // Granada Explosiva causa dano em área (raio 7.5m)
@@ -846,7 +863,7 @@ class GameRoom {
                 y: y,
                 z: z,
                 radius: blastRadius
-            });
+            }, senderWs);
 
             this.players.forEach(target => {
                 if (!target.isAlive || target.team === sender.team) return;
@@ -938,7 +955,7 @@ class GameRoom {
                 y: y,
                 z: z,
                 radius: 35.0
-            });
+            }, senderWs);
         } else if (grenadeType === 'smoke') {
             // Granada de Fumaça (0 dano, cortina volumétrica de fumaça por 15 segundos)
             this.broadcast({
@@ -948,7 +965,7 @@ class GameRoom {
                 y: y,
                 z: z,
                 duration: 15
-            });
+            }, senderWs);
         }
     }
 }
@@ -1254,18 +1271,22 @@ wss.on('connection', (ws) => {
             // ==========================================
             if (data.type === 'grenade_thrown') {
                 if (!myPlayer.isAlive) return;
+                const origin = data.origin || { x: data.x || myPlayer.x, y: data.y || myPlayer.y, z: data.z || myPlayer.z };
+                const velocity = data.velocity || { x: data.vx || 0, y: data.vy || 0, z: data.vz || 0 };
                 currentRoom.broadcast({
                     type: 'grenade_thrown',
                     id: data.id || ('G' + Date.now()),
                     throwerId: playerId,
                     throwerName: myPlayer.name,
                     grenadeType: data.grenadeType || 'he',
-                    x: data.x,
-                    y: data.y,
-                    z: data.z,
-                    vx: data.vx,
-                    vy: data.vy,
-                    vz: data.vz
+                    origin: origin,
+                    velocity: velocity,
+                    x: origin.x,
+                    y: origin.y,
+                    z: origin.z,
+                    vx: velocity.x,
+                    vy: velocity.y,
+                    vz: velocity.z
                 }, ws);
             }
 
@@ -1286,7 +1307,7 @@ wss.on('connection', (ws) => {
                     radius: data.radius || 6.5,
                     attackerId: playerId,
                     attackerName: myPlayer.name
-                });
+                }, ws);
             }
 
             // ==========================================

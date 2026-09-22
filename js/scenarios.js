@@ -569,6 +569,7 @@
         // LOOP DE ANIMAÇÃO E DETECÇÃO DE DANO DE PERIGOS (HAZARDS)
         // ==============================================================
         update(dt, localPlayerPos, onTakeDamageCallback) {
+            if (document.hidden) return;
             const now = Date.now();
 
             // 1. Atualizar animações de props (rotação de anéis, pulsação de luzes)
@@ -614,6 +615,7 @@
          * Gera estalo tático de contador Geiger via Web Audio API
          */
         playGeigerClick() {
+            if (document.hidden) return;
             try {
                 if (!this.audioCtx) {
                     const AudioContext = window.AudioContext || window.webkitAudioContext;

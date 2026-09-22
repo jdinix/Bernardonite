@@ -7,20 +7,67 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Bernardonite</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2.6.3">
-    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico?v=2.6.3">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2.7.0">
+    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico?v=2.7.0">
     <script>
-        // Purga agressiva de CacheStorage e Service Workers em navegadores mobile
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                for (let r of registrations) r.unregister();
-            });
-        }
-        if ('caches' in window) {
-            caches.keys().then(keys => {
-                for (let k of keys) caches.delete(k);
-            });
-        }
+        // Utilitário de storage resiliente (Tracking Prevention Safe / Safari / Brave / Edge)
+        (function() {
+            let hasStorage = false;
+            try {
+                if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage !== null) {
+                    const testKey = '__t_chk__';
+                    window.localStorage.setItem(testKey, '1');
+                    window.localStorage.removeItem(testKey);
+                    hasStorage = true;
+                }
+            } catch(e) {
+                hasStorage = false;
+            }
+
+            window.safeStorage = {
+                _data: {},
+                getItem: function(key) {
+                    if (!hasStorage) return this._data[key] || null;
+                    try {
+                        return window.localStorage.getItem(key);
+                    } catch(e) {
+                        return this._data[key] || null;
+                    }
+                },
+                setItem: function(key, val) {
+                    this._data[key] = String(val);
+                    if (!hasStorage) return;
+                    try {
+                        window.localStorage.setItem(key, val);
+                    } catch(e) {}
+                },
+                removeItem: function(key) {
+                    delete this._data[key];
+                    if (!hasStorage) return;
+                    try {
+                        window.localStorage.removeItem(key);
+                    } catch(e) {}
+                }
+            };
+        })();
+
+        // Navegação de steps do lobby disponível imediatamente para evitar ReferenceError
+        window.currentLobbyStep = 1;
+        window.goToLobbyStep = function(step) {
+            window.currentLobbyStep = Math.max(1, Math.min(3, step));
+            const nameInput = document.getElementById('player-name-input');
+            if (nameInput && nameInput.value.trim() && window.myName !== undefined) {
+                window.myName = nameInput.value.trim();
+            }
+            for (let i = 1; i <= 3; i++) {
+                const sEl = document.getElementById('lobby-step-' + i);
+                const pEl = document.getElementById('step-pill-' + i);
+                if (sEl) sEl.classList.toggle('active', i === window.currentLobbyStep);
+                if (pEl) pEl.classList.toggle('active', i === window.currentLobbyStep);
+            }
+            if (typeof window.updateLobbySummary === 'function') window.updateLobbySummary();
+            if (typeof window.refreshIcons === 'function') window.refreshIcons();
+        };
     </script>
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -1890,10 +1937,10 @@
                         </div>
                     </div>
                     <div class="showcase-card">
-                        <div class="showcase-card-icon"><i data-lucide="shield"></i></div>
+                        <div class="showcase-card-icon"><i data-lucide="gamepad-2"></i></div>
                         <div class="showcase-card-info">
-                            <h5>Times E-Sports & Bots</h5>
-                            <p>Time Azul vs Time Vermelho com bots ajustáveis.</p>
+                            <h5>Controle & Joystick</h5>
+                            <p>Suporte a Gamepad USB/Bluetooth, Mobile e Teclado.</p>
                         </div>
                     </div>
                 </div>
@@ -2155,33 +2202,49 @@
         // ==========================================
         // 1. ÁUDIO SINTETIZADO TÁTICO & EFEITOS ESPECIAIS
         // ==========================================
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                try {
+                    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtxClass) audioCtx = new AudioCtxClass();
+                } catch(e) {}
+            }
+            return audioCtx;
+        }
 
         function playTinnitusTone(intensity = 1.0) {
+            if (document.hidden) return;
             try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                if (ctx.state === 'suspended') ctx.resume();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(3150, now);
                 const peakGain = Math.min(0.4, 0.4 * intensity);
                 gain.gain.setValueAtTime(peakGain, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 4.2);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(ctx.destination);
                 osc.start(now);
                 osc.stop(now + 4.3);
             } catch(e) {}
         }
 
         function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            if (document.hidden) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                if (ctx.state === 'suspended') ctx.resume();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
 
             if (type === 'shot_scar') {
                 osc.type = 'sawtooth';
@@ -2277,33 +2340,33 @@
                 osc.stop(now + 0.16);
             } else if (type === 'grenade_smoke_hiss') {
                 try {
-                    const bufSize = Math.floor(audioCtx.sampleRate * 1.5);
-                    const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+                    const bufSize = Math.floor(ctx.sampleRate * 1.5);
+                    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
                     const d = buf.getChannelData(0);
                     for (let i = 0; i < bufSize; i++) {
-                        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.9));
+                        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.9));
                     }
-                    const nSource = audioCtx.createBufferSource();
+                    const nSource = ctx.createBufferSource();
                     nSource.buffer = buf;
-                    const f = audioCtx.createBiquadFilter();
+                    const f = ctx.createBiquadFilter();
                     f.type = 'bandpass';
                     f.frequency.setValueAtTime(1150, now);
                     f.Q.setValueAtTime(1.1, now);
-                    const hGain = audioCtx.createGain();
+                    const hGain = ctx.createGain();
                     hGain.gain.setValueAtTime(0.45, now);
                     hGain.gain.exponentialRampToValueAtTime(0.01, now + 1.4);
                     nSource.connect(f);
                     f.connect(hGain);
-                    hGain.connect(audioCtx.destination);
+                    hGain.connect(ctx.destination);
                     nSource.start(now);
                     nSource.stop(now + 1.5);
                 } catch(e) {}
             } else if (type === 'victory') {
                 [440, 554, 659, 880].forEach((freq, idx) => {
-                    const o = audioCtx.createOscillator();
-                    const g = audioCtx.createGain();
+                    const o = ctx.createOscillator();
+                    const g = ctx.createGain();
                     o.connect(g);
-                    g.connect(audioCtx.destination);
+                    g.connect(ctx.destination);
                     const t = now + idx * 0.14;
                     o.type = 'triangle';
                     o.frequency.setValueAtTime(freq, t);
@@ -2313,20 +2376,23 @@
                     o.stop(t + 0.45);
                 });
             }
+            } catch(e) {}
         }
 
         // ==========================================
         // EFEITO SONORO REALISTA DE PEIDO (TECLA S)
         // ==========================================
         function playFartSound() {
+            if (document.hidden) return;
             try {
-                if (!audioCtx) return;
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const now = audioCtx.currentTime;
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                if (ctx.state === 'suspended') ctx.resume();
+                const now = ctx.currentTime;
 
                 // Oscilador de onda dente de serra descendente (tom característico)
-                const osc = audioCtx.createOscillator();
-                const oscGain = audioCtx.createGain();
+                const osc = ctx.createOscillator();
+                const oscGain = ctx.createGain();
                 osc.type = 'sawtooth';
 
                 const startFreq = 120 + Math.random() * 25;
@@ -2515,6 +2581,10 @@
 
         const muzzleLight = new THREE.PointLight(0xffaa00, 0, 15);
         scene.add(muzzleLight);
+
+        // Luz estática pré-compilada de explosões (Zero recompilação de shaders GLSL)
+        const explosionLight = new THREE.PointLight(0xff8800, 0, 32);
+        scene.add(explosionLight);
 
         // Terreno da Ilha
         const islandGeo = new THREE.PlaneGeometry(260, 260, 64, 64);
@@ -2998,6 +3068,10 @@
             const rootGroup = new THREE.Group();
             const isBlue = (team === 'blue');
 
+            // Cor personalizada do guerreiro escolhida no lobby (com fallback inteligente)
+            const chosenSuitHex = skinColor || (isBlue ? '#2563eb' : '#dc2626');
+            const customSuitColor = new THREE.Color(chosenSuitHex);
+
             // Container visual do corpo em 3ª pessoa (para poder ocultar em 1ª pessoa)
             const bodyMeshGroup = new THREE.Group();
             rootGroup.add(bodyMeshGroup);
@@ -3006,9 +3080,9 @@
             const skinMat = new THREE.MeshStandardMaterial({ color: 0xdfa178, roughness: 0.55, metalness: 0.05 });
             const uniformMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8, metalness: 0.15 });
             const vestMat = new THREE.MeshStandardMaterial({
-                color: isBlue ? 0x1d4ed8 : 0xb91c1c,
-                roughness: 0.55,
-                metalness: 0.25
+                color: customSuitColor,
+                roughness: 0.45,
+                metalness: 0.35
             });
             const armorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.65 });
             const teamLedMat = new THREE.MeshStandardMaterial({
@@ -3036,7 +3110,7 @@
             torsoBase.castShadow = true;
             bodyMeshGroup.add(torsoBase);
 
-            // Placa peitoral de Kevlar com Molle (na frente do peito: -Z)
+            // Placa peitoral de Kevlar com Molle (na frente do peito: -Z com a cor escolhida da Skin!)
             const vestChest = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.48, 0.44), vestMat);
             vestChest.position.set(0, 1.48, -0.02);
             vestChest.castShadow = true;
@@ -3070,8 +3144,8 @@
             sideHolster.position.set(0.34, 0.98, -0.05);
             bodyMeshGroup.add(belt, buckle, sideHolster);
 
-            // Mochila de Assalto Tática (nas costas: +Z, visível pelo jogador em 3ª pessoa)
-            const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.52, 0.26), armorMat);
+            // Mochila de Assalto Tática (nas costas: +Z, visível pelo jogador em 3ª pessoa na cor da skin!)
+            const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.52, 0.26), vestMat);
             backpack.position.set(0, 1.42, 0.32);
             backpack.castShadow = true;
             const bpStripe = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.04), teamLedMat);
@@ -3096,10 +3170,10 @@
             headMesh.castShadow = true;
             headGroup.add(headMesh);
 
-            // Capacete Balístico Curvado
+            // Capacete Balístico Curvado (com a cor tática escolhida da skin!)
             const helmetDome = new THREE.Mesh(
                 new THREE.SphereGeometry(0.26, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
-                armorMat
+                vestMat
             );
             helmetDome.position.y = 0.28;
             headGroup.add(helmetDome);
@@ -3138,9 +3212,9 @@
             // ----------------------------------------------------
             // 3. BRAÇOS, OMBREIRAS E LUVAS DE COMBATE
             // ----------------------------------------------------
-            // Ombreiras com LEDs luminosos do Time
+            // Ombreiras com a cor da Skin e LEDs luminosos do Time
             [-0.44, 0.44].forEach((ox, idx) => {
-                const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), armorMat);
+                const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), vestMat);
                 pauldron.position.set(ox, 1.62, 0);
                 const pauldronLed = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.22), teamLedMat);
                 pauldronLed.position.set(ox > 0 ? 0.16 : -0.16, 0, 0);
@@ -3153,11 +3227,11 @@
             leftArmGroup.position.set(-0.46, 1.55, 0);
             const lBicep = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.4, 8), uniformMat);
             lBicep.position.y = -0.18;
-            const lElbow = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.13), armorMat);
+            const lElbow = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.13), vestMat);
             lElbow.position.y = -0.38;
             const lForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.38, 8), uniformMat);
             lForearm.position.y = -0.56;
-            const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.14), armorMat);
+            const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.14), vestMat);
             lHand.position.set(0.15, -0.68, -0.35); // Apoia a arma na frente (-Z)
             leftArmGroup.add(lBicep, lElbow, lForearm, lHand);
             leftArmGroup.rotation.x = Math.PI / 6;
@@ -3168,11 +3242,11 @@
             rightArmGroup.position.set(0.46, 1.55, 0);
             const rBicep = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.4, 8), uniformMat);
             rBicep.position.y = -0.18;
-            const rElbow = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.13), armorMat);
+            const rElbow = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.13), vestMat);
             rElbow.position.y = -0.38;
             const rForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.38, 8), uniformMat);
             rForearm.position.y = -0.56;
-            const rGlove = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.14), armorMat);
+            const rGlove = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.14), vestMat);
             rGlove.position.set(0, -0.74, -0.15);
             rightArmGroup.add(rBicep, rElbow, rForearm, rGlove);
             rightArmGroup.rotation.x = Math.PI / 3.8;
@@ -3204,7 +3278,7 @@
             leftLegGroup.position.set(-0.2, 1.0, 0);
             const lThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.48, 8), uniformMat);
             lThigh.position.y = -0.22;
-            const lKnee = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.16, 0.15), armorMat);
+            const lKnee = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.16, 0.15), vestMat);
             lKnee.position.set(0, -0.46, -0.06);
             const lShin = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.42, 8), uniformMat);
             lShin.position.y = -0.68;
@@ -3218,7 +3292,7 @@
             rightLegGroup.position.set(0.2, 1.0, 0);
             const rThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.48, 8), uniformMat);
             rThigh.position.y = -0.22;
-            const rKnee = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.16, 0.15), armorMat);
+            const rKnee = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.16, 0.15), vestMat);
             rKnee.position.set(0, -0.46, -0.06);
             const rShin = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.42, 8), uniformMat);
             rShin.position.y = -0.68;
@@ -3231,7 +3305,7 @@
             // 5. ASA-DELTA (OCULTA NO CHÃO)
             // ----------------------------------------------------
             const glider = new THREE.Group();
-            const wingMat = new THREE.MeshStandardMaterial({ color: isBlue ? 0x0284c7 : 0xe11d48, side: THREE.DoubleSide });
+            const wingMat = new THREE.MeshStandardMaterial({ color: customSuitColor, side: THREE.DoubleSide, roughness: 0.35, metalness: 0.2 });
             const wing = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.4), wingMat);
             wing.rotation.x = Math.PI / 2;
             glider.add(wing);
@@ -3274,12 +3348,12 @@
         }
 
         // ==========================================
-        // 7. MEMÓRIA DE USUÁRIO (LOCALSTORAGE)
+        // 7. MEMÓRIA DE USUÁRIO (SAFESTORAGE)
         // ==========================================
         let myId = null;
-        let myName = localStorage.getItem('fn_user_name') || 'Bernardo';
-        let myTeam = localStorage.getItem('fn_user_team') || 'blue';
-        let mySkin = localStorage.getItem('fn_user_color') || (myTeam === 'blue' ? '#2563eb' : '#dc2626');
+        let myName = safeStorage.getItem('fn_user_name') || 'Bernardo';
+        let myTeam = safeStorage.getItem('fn_user_team') || 'blue';
+        let mySkin = safeStorage.getItem('fn_user_color') || (myTeam === 'blue' ? '#2563eb' : '#dc2626');
 
         const remotePlayers = new Map();
         let localPlayer = null;
@@ -3423,25 +3497,71 @@
             }
         }
 
-        // Partículas e Efeitos de Explosão
+        // Partículas e Efeitos de Explosão Otimizados (Zero Garbage Collection / Zero Shader Recompilation)
         const particlesGroup = new THREE.Group();
         scene.add(particlesGroup);
         const activeParticles = [];
 
-        function spawnExplosionEffect(x, y, z) {
-            playSound('explosion');
-            const flash = new THREE.PointLight(0xffaa00, 6.0, 30);
-            flash.position.set(x, y + 1, z);
-            scene.add(flash);
-            setTimeout(() => scene.remove(flash), 120);
+        const sharedExpGeo = new THREE.BoxGeometry(0.32, 0.32, 0.32);
+        const sharedElimGeo = new THREE.BoxGeometry(0.24, 0.24, 0.24);
+        const sharedSmokeGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
 
-            const pGeo = new THREE.BoxGeometry(0.35, 0.35, 0.35);
-            for (let i = 0; i < 55; i++) {
-                const color = Math.random() > 0.4 ? 0xf97316 : (Math.random() > 0.5 ? 0xef4444 : 0x71717a);
-                const p = new THREE.Mesh(pGeo, new THREE.MeshStandardMaterial({ color }));
-                p.position.set(x, y + 0.8, z);
+        const expMats = [
+            new THREE.MeshBasicMaterial({ color: 0xf97316 }), // Laranja explosão
+            new THREE.MeshBasicMaterial({ color: 0xef4444 }), // Vermelho fogo
+            new THREE.MeshBasicMaterial({ color: 0xfacc15 }), // Amarelo faísca
+            new THREE.MeshBasicMaterial({ color: 0x475569 })  // Fumaça cinza
+        ];
+
+        const elimMats = [
+            new THREE.MeshBasicMaterial({ color: 0xfacc15 }),
+            new THREE.MeshBasicMaterial({ color: 0xef4444 })
+        ];
+
+        const smokeTrailMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
+
+        // Geometrias e Materiais compartilhados para granadas e fumaça (zero lag / zero GC spikes)
+        const grenadeGeoHE = new THREE.SphereGeometry(0.13, 8, 8);
+        const grenadeGeoCyl = new THREE.CylinderGeometry(0.08, 0.08, 0.24, 8);
+        const grenadeMatHE = new THREE.MeshLambertMaterial({ color: 0x15803d });
+        const grenadeMatFlash = new THREE.MeshLambertMaterial({ color: 0x38bdf8 });
+        const grenadeMatSmoke = new THREE.MeshLambertMaterial({ color: 0x64748b });
+
+        const smokeGrenadePuffGeo = new THREE.SphereGeometry(1.5, 7, 7);
+        const sharedSmokeCloudMat = new THREE.MeshBasicMaterial({
+            color: 0x94a3b8,
+            transparent: true,
+            opacity: 0.85,
+            depthWrite: false
+        });
+
+        let lastExplosionPos = { x: 0, y: 0, z: 0, time: 0 };
+
+        function spawnExplosionEffect(x, y, z) {
+            if (document.hidden) return;
+
+            // Evita duplicação se a mesma explosão foi disparada localmente e pelo servidor em < 400ms
+            const now = performance.now();
+            if (now - lastExplosionPos.time < 400 && Math.hypot(x - lastExplosionPos.x, z - lastExplosionPos.z) < 2.0) {
+                return;
+            }
+            lastExplosionPos = { x, y, z, time: now };
+
+            playSound('explosion');
+
+            // Aciona o clarão dinâmico na PointLight pré-alocada (sem quebrar shaders)
+            if (explosionLight) {
+                explosionLight.position.set(x, y + 1.2, z);
+                explosionLight.intensity = 7.5;
+            }
+
+            // Cria 26 partículas leves com geometria e materiais compartilhados
+            for (let i = 0; i < 26; i++) {
+                const mat = expMats[i % expMats.length];
+                const p = new THREE.Mesh(sharedExpGeo, mat);
+                p.position.set(x, y + 0.6, z);
                 p.userData = {
-                    vel: new THREE.Vector3((Math.random() - 0.5) * 16, Math.random() * 14 + 2, (Math.random() - 0.5) * 16),
+                    vel: new THREE.Vector3((Math.random() - 0.5) * 14, Math.random() * 11 + 2, (Math.random() - 0.5) * 14),
                     life: 1.0
                 };
                 particlesGroup.add(p);
@@ -3450,13 +3570,12 @@
         }
 
         function spawnEliminationParticles(x, y, z) {
-            const pGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
-            for (let i = 0; i < 35; i++) {
-                const pMat = new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0xfacc15 : 0xef4444 });
-                const p = new THREE.Mesh(pGeo, pMat);
+            for (let i = 0; i < 20; i++) {
+                const mat = elimMats[i % elimMats.length];
+                const p = new THREE.Mesh(sharedElimGeo, mat);
                 p.position.set(x, y + 1.2, z);
                 p.userData = {
-                    vel: new THREE.Vector3((Math.random() - 0.5) * 10, Math.random() * 8 + 3, (Math.random() - 0.5) * 10),
+                    vel: new THREE.Vector3((Math.random() - 0.5) * 9, Math.random() * 7 + 2, (Math.random() - 0.5) * 9),
                     life: 1.0
                 };
                 particlesGroup.add(p);
@@ -4014,20 +4133,11 @@
 
             let grenadeMesh;
             if (type === 'he') {
-                grenadeMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.13, 10, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.4, metalness: 0.5 })
-                );
+                grenadeMesh = new THREE.Mesh(grenadeGeoHE, grenadeMatHE);
             } else if (type === 'flash') {
-                grenadeMesh = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.08, 0.08, 0.24, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.8 })
-                );
+                grenadeMesh = new THREE.Mesh(grenadeGeoCyl, grenadeMatFlash);
             } else {
-                grenadeMesh = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.08, 0.08, 0.26, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.4 })
-                );
+                grenadeMesh = new THREE.Mesh(grenadeGeoCyl, grenadeMatSmoke);
             }
             grenadeMesh.position.copy(muzzle);
             scene.add(grenadeMesh);
@@ -4055,26 +4165,19 @@
         }
 
         function spawnRemoteGrenade(data) {
-            const origin = data.origin;
-            const velocity = new THREE.Vector3(data.velocity.x, data.velocity.y, data.velocity.z);
+            const origin = data.origin || { x: data.x || 0, y: data.y || 2, z: data.z || 0 };
+            const velocity = data.velocity
+                ? new THREE.Vector3(data.velocity.x, data.velocity.y, data.velocity.z)
+                : new THREE.Vector3(data.vx || 0, data.vy || 0, data.vz || 0);
             const type = data.grenadeType || 'he';
 
             let gMesh;
             if (type === 'he') {
-                gMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.13, 10, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.4, metalness: 0.5 })
-                );
+                gMesh = new THREE.Mesh(grenadeGeoHE, grenadeMatHE);
             } else if (type === 'flash') {
-                gMesh = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.08, 0.08, 0.24, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.8 })
-                );
+                gMesh = new THREE.Mesh(grenadeGeoCyl, grenadeMatFlash);
             } else {
-                gMesh = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.08, 0.08, 0.26, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.4 })
-                );
+                gMesh = new THREE.Mesh(grenadeGeoCyl, grenadeMatSmoke);
             }
             gMesh.position.set(origin.x, origin.y, origin.z);
             scene.add(gMesh);
@@ -4131,17 +4234,9 @@
             const group = new THREE.Group();
             group.position.set(x, y + 0.6, z);
 
-            const smokeMat = new THREE.MeshStandardMaterial({
-                color: 0x94a3b8,
-                transparent: true,
-                opacity: 0.88,
-                roughness: 0.95,
-                depthWrite: false
-            });
-
             const puffs = [];
             for (let i = 0; i < 16; i++) {
-                const puff = new THREE.Mesh(new THREE.SphereGeometry(1.5 + Math.random() * 0.8, 8, 8), smokeMat.clone());
+                const puff = new THREE.Mesh(smokeGrenadePuffGeo, sharedSmokeCloudMat);
                 puff.position.set(
                     (Math.random() - 0.5) * 2.8,
                     0.2 + Math.random() * 2.0,
@@ -4149,7 +4244,7 @@
                 );
                 puff.userData = {
                     baseScale: 0.2,
-                    targetScale: 2.2 + Math.random() * 1.4,
+                    targetScale: 1.8 + Math.random() * 1.2,
                     rotSpeed: (Math.random() - 0.5) * 0.4
                 };
                 group.add(puff);
@@ -4488,6 +4583,7 @@
         }
 
         function spawnTracer(start, target, color = 0xfacc15, durationMs = 60) {
+            if (document.hidden) return;
             const geo = new THREE.BufferGeometry().setFromPoints([start, target]);
             const mat = new THREE.LineBasicMaterial({ color: color, linewidth: 3 });
             const line = new THREE.Line(geo, mat);
@@ -4496,6 +4592,7 @@
         }
 
         function spawnDamageNumber(x, y, z, damage, isShield, isCrit = false) {
+            if (document.hidden) return;
             const screenPos = new THREE.Vector3(x, y, z).project(camera);
             const el = document.createElement('div');
             el.className = 'dmg-text';
@@ -4611,27 +4708,36 @@
             });
         }
 
-        // Seleção de Times no Lobby
-        function updateSkinsForTeam(team) {
+        // Seleção de Times no Lobby e Paleta de Skins
+        function updateSkinsForTeam(team, preferredColor) {
             const skinsBox = document.getElementById('skins-container');
+            if (!skinsBox) return;
             const blueColors = ['#2563eb', '#0284c7', '#0d9488', '#4f46e5', '#eab308'];
             const redColors = ['#dc2626', '#ea580c', '#e11d48', '#b91c1c', '#eab308'];
             const colors = (team === 'red') ? redColors : blueColors;
 
+            const targetColor = preferredColor || mySkin || colors[0];
+            let matched = false;
+
             skinsBox.innerHTML = '';
-            colors.forEach((c, idx) => {
+            colors.forEach((c) => {
+                const isSelected = (c.toLowerCase() === targetColor.toLowerCase()) || (!matched && c === colors[0]);
+                if (isSelected) matched = true;
                 const opt = document.createElement('div');
-                opt.className = 'skin-opt' + (idx === 0 ? ' selected' : '');
+                opt.className = 'skin-opt' + (isSelected ? ' selected' : '');
                 opt.style.background = c;
                 opt.setAttribute('data-color', c);
                 opt.addEventListener('click', () => {
                     document.querySelectorAll('.skin-opt').forEach(o => o.classList.remove('selected'));
                     opt.classList.add('selected');
                     mySkin = c;
+                    safeStorage.setItem('fn_user_color', mySkin);
+                    updateLobbySummary();
                 });
                 skinsBox.appendChild(opt);
             });
-            mySkin = colors[0];
+            mySkin = matched ? targetColor : colors[0];
+            safeStorage.setItem('fn_user_color', mySkin);
             updateLobbySummary();
         }
 
@@ -4642,7 +4748,8 @@
             teamBlueOpt.classList.add('selected');
             teamRedOpt.classList.remove('selected');
             myTeam = 'blue';
-            updateSkinsForTeam('blue');
+            safeStorage.setItem('fn_user_team', myTeam);
+            updateSkinsForTeam('blue', mySkin);
             updateLobbySummary();
         });
 
@@ -4650,24 +4757,37 @@
             teamRedOpt.classList.add('selected');
             teamBlueOpt.classList.remove('selected');
             myTeam = 'red';
-            updateSkinsForTeam('red');
+            safeStorage.setItem('fn_user_team', myTeam);
+            updateSkinsForTeam('red', mySkin);
             updateLobbySummary();
         });
 
-        // Carrega preferências salvas no localStorage
-        if (localStorage.getItem('fn_user_name')) {
-            const savedName = localStorage.getItem('fn_user_name');
-            document.getElementById('player-name-input').value = savedName;
+        // Carrega preferências salvas no safeStorage (imune a Tracking Prevention)
+        const savedName = safeStorage.getItem('fn_user_name');
+        if (savedName) {
+            const nameInput = document.getElementById('player-name-input');
+            if (nameInput) nameInput.value = savedName;
             myName = savedName;
             document.querySelectorAll('.name-chip').forEach(c => {
                 c.classList.toggle('selected', c.getAttribute('data-name') === savedName);
             });
         }
-        if (localStorage.getItem('fn_user_team')) {
-            const savedTeam = localStorage.getItem('fn_user_team');
-            if (savedTeam === 'red') teamRedOpt.click();
-            else teamBlueOpt.click();
+        const savedTeam = safeStorage.getItem('fn_user_team');
+        if (savedTeam) {
+            myTeam = savedTeam;
+            if (savedTeam === 'red') {
+                teamRedOpt.classList.add('selected');
+                teamBlueOpt.classList.remove('selected');
+            } else {
+                teamBlueOpt.classList.add('selected');
+                teamRedOpt.classList.remove('selected');
+            }
         }
+        const savedColor = safeStorage.getItem('fn_user_color');
+        if (savedColor) {
+            mySkin = savedColor;
+        }
+        updateSkinsForTeam(myTeam, mySkin);
 
         // Controle de Quantidade de Bots
         let selectedBotCount = 6;
@@ -4843,10 +4963,10 @@
                 }));
             }
 
-            // Salva na memória do navegador
-            localStorage.setItem('fn_user_name', myName);
-            localStorage.setItem('fn_user_team', myTeam);
-            localStorage.setItem('fn_user_color', mySkin);
+            // Salva na memória do navegador (resiliente com safeStorage)
+            safeStorage.setItem('fn_user_name', myName);
+            safeStorage.setItem('fn_user_team', myTeam);
+            safeStorage.setItem('fn_user_color', mySkin);
 
             // Atualiza tag do meu time no HUD
             const myTeamPill = document.getElementById('my-team-pill');
@@ -5268,6 +5388,161 @@
             modal.style.display = show ? 'flex' : 'none';
         }
 
+        // ==========================================
+        // SISTEMA DE SUPORTE A GAMEPAD / JOYSTICK FÍSICO (USB & BLUETOOTH)
+        // ==========================================
+        let lastGamepadButtons = {};
+        let gamepadFireTime = 0;
+        let isGamepadConnected = false;
+
+        window.addEventListener('gamepadconnected', (e) => {
+            isGamepadConnected = true;
+            const name = (e.gamepad && e.gamepad.id) ? e.gamepad.id.split('(')[0].trim() : 'Controle';
+            showToast(`<i data-lucide="gamepad-2"></i> ${name} conectado! Use os analógicos para jogar.`);
+            if (window.lucide) lucide.createIcons();
+        });
+
+        window.addEventListener('gamepaddisconnected', () => {
+            isGamepadConnected = false;
+            showToast(`<i data-lucide="gamepad-2"></i> Controle desconectado.`);
+            if (window.lucide) lucide.createIcons();
+        });
+
+        function pollGamepad(dt) {
+            if (!navigator.getGamepads) return null;
+            const gamepads = navigator.getGamepads();
+            if (!gamepads) return null;
+
+            let gp = null;
+            for (let i = 0; i < gamepads.length; i++) {
+                if (gamepads[i] && gamepads[i].connected) {
+                    gp = gamepads[i];
+                    break;
+                }
+            }
+            if (!gp) return null;
+
+            isGamepadConnected = true;
+            const deadzone = 0.15;
+
+            // Analógico Esquerdo (Andar / Strafe)
+            let lx = gp.axes[0] || 0;
+            let ly = gp.axes[1] || 0;
+            if (Math.abs(lx) < deadzone) lx = 0;
+            if (Math.abs(ly) < deadzone) ly = 0;
+
+            // Analógico Direito (Câmera / Olhar)
+            // Compatível com Standard Gamepad e adaptadores DragonRise / Microntek USB
+            let rx = (gp.axes[2] !== undefined && Math.abs(gp.axes[2]) >= deadzone) ? gp.axes[2] : 0;
+            let ry = (gp.axes[3] !== undefined && Math.abs(gp.axes[3]) >= deadzone) ? gp.axes[3] : 0;
+            if (ry === 0 && gp.axes[5] !== undefined && Math.abs(gp.axes[5]) >= deadzone) {
+                ry = gp.axes[5];
+            } else if (ry === 0 && gp.axes[4] !== undefined && Math.abs(gp.axes[4]) >= deadzone) {
+                ry = gp.axes[4];
+            }
+
+            // Rotação suave da câmera pelo analógico direito
+            if (rx !== 0 || ry !== 0) {
+                const lookSpeed = 2.6;
+                yaw -= rx * lookSpeed * dt;
+                pitch -= ry * lookSpeed * dt;
+                pitch = Math.max(-0.75, Math.min(0.75, pitch));
+                if (localPlayer) localPlayer.rotation.y = yaw;
+            }
+
+            // Pulo: Botão 0 (A no Xbox / X no PS) ou Botão 2 (X no DragonRise PSX)
+            const btnJump = (gp.buttons[0] && gp.buttons[0].pressed) || (gp.buttons[2] && gp.buttons[2].pressed);
+            const prevJump = lastGamepadButtons[0] || lastGamepadButtons[2];
+            if (btnJump && !prevJump) {
+                mobileJumpTrigger = true;
+            }
+
+            // Sprint: Botão L3 (pressionar analógico esquerdo - botão 10 ou 8) ou empurrar ly forte
+            const btnL3 = (gp.buttons[10] && gp.buttons[10].pressed) || (gp.buttons[8] && gp.buttons[8].pressed && gp.buttons.length <= 12);
+            const prevL3 = lastGamepadButtons[10] || lastGamepadButtons[8];
+            if (btnL3 && !prevL3) {
+                setSprintState(!isSprinting);
+            } else if (ly < -0.85 && !isSprinting) {
+                setSprintState(true);
+            }
+
+            // Atirar: Gatilho Direito (R2 / RT - botão 7) ou R1 (botão 5)
+            const rt = gp.buttons[7];
+            const r1 = gp.buttons[5];
+            const rtPressed = (rt && (rt.pressed || rt.value > 0.35)) || (r1 && r1.pressed && gp.buttons.length <= 12);
+            if (rtPressed) {
+                const now = performance.now();
+                if (now - gamepadFireTime > 160) {
+                    fireWeapon();
+                    gamepadFireTime = now;
+                }
+            }
+
+            // Troca de Armas: RB (R1 - botão 5) e LB (L1 - botão 4)
+            const btnRB = gp.buttons[5] && gp.buttons[5].pressed;
+            if (btnRB && !lastGamepadButtons[5]) {
+                const next = (localStats.activeSlot % 9) + 1;
+                selectSlot(next);
+            }
+            const btnLB = gp.buttons[4] && gp.buttons[4].pressed;
+            if (btnLB && !lastGamepadButtons[4]) {
+                let prev = localStats.activeSlot - 1;
+                if (prev < 1) prev = 9;
+                selectSlot(prev);
+            }
+
+            // Respawn / Ação: Botão X no Xbox / Quadrado no PS (botão 2)
+            const btnX = gp.buttons[2] && gp.buttons[2].pressed;
+            if (btnX && !lastGamepadButtons[2]) {
+                if (!localStats.isAlive || localStats.isSpectating) {
+                    requestRespawnSolo();
+                }
+            }
+
+            // Alternar Picareta / Arma: Botão Y no Xbox / Triângulo no PS (botão 3)
+            const btnY = gp.buttons[3] && gp.buttons[3].pressed;
+            if (btnY && !lastGamepadButtons[3]) {
+                selectSlot(localStats.activeSlot === 1 ? 2 : 1);
+            }
+
+            // Alternar 1ª e 3ª Pessoa: Botão R3 (clique do analógico direito - botão 11)
+            const btnR3 = gp.buttons[11] && gp.buttons[11].pressed;
+            if (btnR3 && !lastGamepadButtons[11]) {
+                toggleCameraView();
+            }
+
+            // D-Pad:
+            // Cima (botão 12) -> Granada HE (Slot 7)
+            if (gp.buttons[12] && gp.buttons[12].pressed && !lastGamepadButtons[12]) {
+                selectSlot(7);
+            }
+            // Baixo (botão 13) -> Granada Flash (Slot 8)
+            if (gp.buttons[13] && gp.buttons[13].pressed && !lastGamepadButtons[13]) {
+                selectSlot(8);
+            }
+            // Esquerda (botão 14) -> Parede
+            if (gp.buttons[14] && gp.buttons[14].pressed && !lastGamepadButtons[14]) {
+                buildStructure('wall');
+            }
+            // Direita (botão 15) -> Rampa
+            if (gp.buttons[15] && gp.buttons[15].pressed && !lastGamepadButtons[15]) {
+                buildStructure('ramp');
+            }
+
+            // Placar / Leaderboard: Botão Select / Back (botão 8)
+            const btnSelect = gp.buttons[8] && gp.buttons[8].pressed;
+            if (btnSelect && !lastGamepadButtons[8]) {
+                toggleLeaderboard(!isTabOpen);
+            }
+
+            // Atualiza cache de botões
+            for (let b = 0; b < gp.buttons.length; b++) {
+                lastGamepadButtons[b] = gp.buttons[b].pressed;
+            }
+
+            return { lx, ly, connected: true };
+        }
+
         window.addEventListener('keydown', (e) => {
             keys[e.code] = true;
 
@@ -5372,6 +5647,42 @@
         document.getElementById('build-floor').addEventListener('click', () => buildStructure('floor'));
 
         // ==========================================
+        // 11.5 RESILIÊNCIA CONTRA TRAVAMENTO AO TROCAR DE ABA
+        // ==========================================
+        function resetInputStates() {
+            for (let k in keys) keys[k] = false;
+            mobileMoveX = 0;
+            mobileMoveY = 0;
+            mobileJumpTrigger = false;
+            if (mobileFireInterval) {
+                clearInterval(mobileFireInterval);
+                mobileFireInterval = null;
+            }
+            if (joyKnob) joyKnob.style.transform = 'translate(0px, 0px)';
+            lastGamepadButtons = {};
+            setSprintState(false);
+            toggleLeaderboard(false);
+        }
+
+        window.addEventListener('blur', resetInputStates);
+        window.addEventListener('focus', () => {
+            lastTime = performance.now();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                resetInputStates();
+            } else {
+                lastTime = performance.now();
+                // Se a conexão WebSocket caiu durante background da aba, reconecta suavemente
+                if (!ws || ws.readyState >= 2) {
+                    console.log('🔄 Aba reativada com WebSocket desconectado. Reconectando...');
+                    connectWebSocket();
+                }
+            }
+        });
+
+        // ==========================================
         // 12. LOOP PRINCIPAL DE RENDERIZAÇÃO
         // ==========================================
         let lastTime = performance.now();
@@ -5379,6 +5690,11 @@
 
         function animate() {
             requestAnimationFrame(animate);
+
+            if (document.hidden) {
+                lastTime = performance.now();
+                return; // Evita loop de render e física pesada enquanto a aba estiver em segundo plano
+            }
 
             const now = performance.now();
             const dt = Math.min((now - lastTime) / 1000, 0.1);
@@ -5458,17 +5774,22 @@
             if (redBase && redBase.children[3]) redBase.children[3].rotation.y += dt * 0.8;
             if (centralChest) centralChest.rotation.y += dt * 0.5;
 
-            // Partículas
+            // Atenuação suave do clarão de explosões (PointLight estática pré-compilada)
+            if (explosionLight && explosionLight.intensity > 0.05) {
+                explosionLight.intensity = THREE.MathUtils.lerp(explosionLight.intensity, 0, 0.18);
+            } else if (explosionLight && explosionLight.intensity > 0) {
+                explosionLight.intensity = 0;
+            }
+
+            // Partículas Otimizadas (Zero alocação/descarte de geometria na GPU)
             for (let i = activeParticles.length - 1; i >= 0; i--) {
                 const p = activeParticles[i];
                 p.userData.life -= dt * 1.5;
                 p.position.addScaledVector(p.userData.vel, dt);
                 p.userData.vel.y -= 15 * dt;
-                p.scale.setScalar(p.userData.life);
+                p.scale.setScalar(Math.max(0.001, p.userData.life));
                 if (p.userData.life <= 0) {
                     particlesGroup.remove(p);
-                    p.geometry.dispose();
-                    p.material.dispose();
                     activeParticles.splice(i, 1);
                 }
             }
@@ -5479,11 +5800,9 @@
                 r.mesh.position.addScaledVector(r.dir, r.speed * dt);
                 r.traveled += r.speed * dt;
 
-                // Fumaça de propulsão
+                // Fumaça de propulsão leve com geometria compartilhada
                 if (Math.random() > 0.4) {
-                    const smGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
-                    const smMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8 });
-                    const sm = new THREE.Mesh(smGeo, smMat);
+                    const sm = new THREE.Mesh(sharedSmokeGeo, smokeTrailMat);
                     sm.position.copy(r.mesh.position);
                     sm.userData = { vel: new THREE.Vector3((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2), life: 0.5 };
                     particlesGroup.add(sm);
@@ -5507,19 +5826,26 @@
             const camDir = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
             const camRight = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
 
+            // LEITURA DO CONTROLE / JOYSTICK FÍSICO
+            const gpInput = pollGamepad(dt);
+
             // MODO ESPECTADOR FLUIDO E SEM LAG
             if (localStats.isSpectating) {
                 if (fpsViewModel && fpsViewModel.visible) fpsViewModel.visible = false;
                 const specSpeed = 22.0;
                 const specMove = new THREE.Vector3();
 
-                if (isLocked) {
+                if (isLocked || (gpInput && gpInput.connected)) {
                     if (keys['KeyW']) specMove.add(camDir);
                     if (keys['KeyS']) specMove.sub(camDir);
                     if (keys['KeyD']) specMove.add(camRight);
                     if (keys['KeyA']) specMove.sub(camRight);
                     if (keys['Space']) spectatorCameraPos.y += 15.0 * dt;
                     if (keys['ShiftLeft'] || keys['ShiftRight']) spectatorCameraPos.y -= 15.0 * dt;
+                    if (gpInput) {
+                        if (gpInput.ly !== 0) specMove.add(camDir.clone().multiplyScalar(-gpInput.ly));
+                        if (gpInput.lx !== 0) specMove.add(camRight.clone().multiplyScalar(gpInput.lx));
+                    }
                 }
 
                 if (specMove.lengthSq() > 0) {
@@ -5536,7 +5862,7 @@
             } else if (localStats.isAlive && localPlayer) {
                 // JOGADOR VIVO NO CHÃO EM 3ª / 1ª PESSOA
                 const moveVec = new THREE.Vector3();
-                if (isLocked || isTouchDevice) {
+                if (isLocked || isTouchDevice || (gpInput && gpInput.connected)) {
                     if (keys['KeyW']) moveVec.add(camDir);
                     if (keys['KeyS']) moveVec.sub(camDir);
                     if (keys['KeyD']) moveVec.add(camRight);
@@ -5546,6 +5872,11 @@
                 if (mobileMoveX !== 0 || mobileMoveY !== 0) {
                     moveVec.add(camDir.clone().multiplyScalar(-mobileMoveY));
                     moveVec.add(camRight.clone().multiplyScalar(mobileMoveX));
+                }
+                // Movimento por Joystick Físico (Gamepad / Controle)
+                if (gpInput && gpInput.connected) {
+                    if (gpInput.ly !== 0) moveVec.add(camDir.clone().multiplyScalar(-gpInput.ly));
+                    if (gpInput.lx !== 0) moveVec.add(camRight.clone().multiplyScalar(gpInput.lx));
                 }
 
                 const isMoving = moveVec.lengthSq() > 0.005;
