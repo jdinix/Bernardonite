@@ -2202,15 +2202,92 @@
         // ==========================================
         // 1. ÁUDIO SINTETIZADO TÁTICO & EFEITOS ESPECIAIS
         // ==========================================
+        // ==========================================
+        // 1. ÁUDIO ESPACIAL 3D & SÍNTESE DE ALTA FIDELIDADE
+        // ==========================================
         let audioCtx = null;
         function getAudioContext() {
             if (!audioCtx) {
                 try {
                     const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-                    if (AudioCtxClass) audioCtx = new AudioCtxClass();
+                    if (AudioCtxClass) {
+                        audioCtx = new AudioCtxClass();
+                    }
                 } catch(e) {}
             }
             return audioCtx;
+        }
+        window.getSharedAudioContext = getAudioContext;
+
+        // Buffer compartilhado de ruído branco (evita alocações e GC durante combate)
+        let sharedNoiseBuffer = null;
+        function getNoiseBuffer(ctx) {
+            if (!sharedNoiseBuffer) {
+                const len = Math.floor(ctx.sampleRate * 2.0);
+                sharedNoiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
+                const data = sharedNoiseBuffer.getChannelData(0);
+                for (let i = 0; i < len; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+            }
+            return sharedNoiseBuffer;
+        }
+
+        // Panner Espacial 3D (Binaural HRTF com atenuação por distância)
+        function createPanner(ctx, pos) {
+            if (!pos) return ctx.destination;
+            try {
+                const panner = ctx.createPanner();
+                panner.panningModel = 'HRTF'; // Panning binaural realista para fones de ouvido
+                panner.distanceModel = 'inverse';
+                panner.refDistance = 12;
+                panner.maxDistance = 150;
+                panner.rolloffFactor = 1.35;
+                panner.coneInnerAngle = 360;
+
+                const x = pos.x !== undefined ? pos.x : 0;
+                const y = pos.y !== undefined ? pos.y : 0;
+                const z = pos.z !== undefined ? pos.z : 0;
+
+                if (panner.positionX) {
+                    panner.positionX.setValueAtTime(x, ctx.currentTime);
+                    panner.positionY.setValueAtTime(y, ctx.currentTime);
+                    panner.positionZ.setValueAtTime(z, ctx.currentTime);
+                } else if (panner.setPosition) {
+                    panner.setPosition(x, y, z);
+                }
+                panner.connect(ctx.destination);
+                return panner;
+            } catch(e) {
+                return ctx.destination;
+            }
+        }
+
+        // Sincronização contínua do ouvinte com a câmera Three.js
+        function updateAudioListener() {
+            if (!audioCtx || !camera) return;
+            try {
+                const listener = audioCtx.listener;
+                const pos = camera.position;
+                const forward = camera.getWorldDirection(new THREE.Vector3());
+                const up = camera.up;
+
+                if (listener.positionX) {
+                    const now = audioCtx.currentTime;
+                    listener.positionX.setValueAtTime(pos.x, now);
+                    listener.positionY.setValueAtTime(pos.y, now);
+                    listener.positionZ.setValueAtTime(pos.z, now);
+                    listener.forwardX.setValueAtTime(forward.x, now);
+                    listener.forwardY.setValueAtTime(forward.y, now);
+                    listener.forwardZ.setValueAtTime(forward.z, now);
+                    listener.upX.setValueAtTime(up.x, now);
+                    listener.upY.setValueAtTime(up.y, now);
+                    listener.upZ.setValueAtTime(up.z, now);
+                } else if (listener.setPosition) {
+                    listener.setPosition(pos.x, pos.y, pos.z);
+                    listener.setOrientation(forward.x, forward.y, forward.z, up.x, up.y, up.z);
+                }
+            } catch(e) {}
         }
 
         function playTinnitusTone(intensity = 1.0) {
@@ -2234,148 +2311,354 @@
             } catch(e) {}
         }
 
-        function playSound(type) {
+        function playSound(type, pos = null) {
             if (document.hidden) return;
             try {
                 const ctx = getAudioContext();
                 if (!ctx) return;
                 if (ctx.state === 'suspended') ctx.resume();
                 const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
+                const out = createPanner(ctx, pos);
 
-            if (type === 'shot_scar') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(520, now);
-                osc.frequency.exponentialRampToValueAtTime(70, now + 0.12);
-                gain.gain.setValueAtTime(0.4, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-                osc.start(now);
-                osc.stop(now + 0.12);
-            } else if (type === 'shot_shotgun') {
-                // Som pesado duplo
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(220, now);
-                osc.frequency.exponentialRampToValueAtTime(45, now + 0.22);
-                gain.gain.setValueAtTime(0.65, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
-                osc.start(now);
-                osc.stop(now + 0.22);
-            } else if (type === 'shot_sniper') {
-                // Trovão supersônico
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(980, now);
-                osc.frequency.exponentialRampToValueAtTime(80, now + 0.38);
-                gain.gain.setValueAtTime(0.7, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.38);
-                osc.start(now);
-                osc.stop(now + 0.38);
-            } else if (type === 'shot_rpg') {
-                // Zumbido propulsor
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(140, now);
-                osc.frequency.linearRampToValueAtTime(380, now + 0.3);
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
-            } else if (type === 'explosion') {
-                // Boom maciço
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(110, now);
-                osc.frequency.exponentialRampToValueAtTime(25, now + 0.55);
-                gain.gain.setValueAtTime(0.9, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
-                osc.start(now);
-                osc.stop(now + 0.55);
-            } else if (type === 'drink_shield') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(350, now);
-                osc.frequency.exponentialRampToValueAtTime(750, now + 0.25);
-                gain.gain.setValueAtTime(0.4, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                osc.start(now);
-                osc.stop(now + 0.25);
-            } else if (type === 'hit_shield') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(950, now);
-                osc.frequency.exponentialRampToValueAtTime(1450, now + 0.08);
-                gain.gain.setValueAtTime(0.4, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-                osc.start(now);
-                osc.stop(now + 0.08);
-            } else if (type === 'hit_body') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(290, now);
-                osc.frequency.exponentialRampToValueAtTime(100, now + 0.08);
-                gain.gain.setValueAtTime(0.35, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-                osc.start(now);
-                osc.stop(now + 0.08);
-            } else if (type === 'build') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(260, now);
-                osc.frequency.setValueAtTime(440, now + 0.04);
-                gain.gain.setValueAtTime(0.35, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-                osc.start(now);
-                osc.stop(now + 0.12);
-            } else if (type === 'grenade_pin') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1900, now);
-                osc.frequency.exponentialRampToValueAtTime(500, now + 0.09);
-                gain.gain.setValueAtTime(0.35, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
-                osc.start(now);
-                osc.stop(now + 0.09);
-            } else if (type === 'grenade_flash_pop') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(2500, now);
-                osc.frequency.exponentialRampToValueAtTime(280, now + 0.16);
-                gain.gain.setValueAtTime(0.75, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
-                osc.start(now);
-                osc.stop(now + 0.16);
-            } else if (type === 'grenade_smoke_hiss') {
-                try {
-                    const bufSize = Math.floor(ctx.sampleRate * 1.5);
-                    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-                    const d = buf.getChannelData(0);
-                    for (let i = 0; i < bufSize; i++) {
-                        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.9));
+                if (type === 'shot_scar') {
+                    // Camada 1: Estampido seco de pólvora (Ruído filtrado em Bandpass)
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const bFilter = ctx.createBiquadFilter();
+                    bFilter.type = 'bandpass';
+                    bFilter.frequency.setValueAtTime(1450, now);
+                    bFilter.Q.setValueAtTime(1.4, now);
+                    const nGain = ctx.createGain();
+                    nGain.gain.setValueAtTime(0.75, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    nSrc.connect(bFilter);
+                    bFilter.connect(nGain);
+                    nGain.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.09);
+
+                    // Camada 2: Punch mecânico / grave da câmara
+                    const osc = ctx.createOscillator();
+                    const oGain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(280, now);
+                    osc.frequency.exponentialRampToValueAtTime(55, now + 0.11);
+                    oGain.gain.setValueAtTime(0.5, now);
+                    oGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                    osc.connect(oGain);
+                    oGain.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+
+                } else if (type === 'shot_shotgun') {
+                    // Camada 1: Estouro pesado de chumbo (Ruído Lowpass encorpado)
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const lpFilter = ctx.createBiquadFilter();
+                    lpFilter.type = 'lowpass';
+                    lpFilter.frequency.setValueAtTime(1200, now);
+                    lpFilter.frequency.exponentialRampToValueAtTime(260, now + 0.22);
+                    const nGain = ctx.createGain();
+                    nGain.gain.setValueAtTime(0.95, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                    nSrc.connect(lpFilter);
+                    lpFilter.connect(nGain);
+                    nGain.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.23);
+
+                    // Camada 2: Baixo sub-grave devastador
+                    const osc = ctx.createOscillator();
+                    const oGain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(32, now + 0.25);
+                    oGain.gain.setValueAtTime(0.75, now);
+                    oGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.connect(oGain);
+                    oGain.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.26);
+
+                } else if (type === 'shot_sniper') {
+                    // Camada 1: Estalo supersônico (Highpass crack imediato)
+                    const nCrack = ctx.createBufferSource();
+                    nCrack.buffer = getNoiseBuffer(ctx);
+                    const hpFilter = ctx.createBiquadFilter();
+                    hpFilter.type = 'highpass';
+                    hpFilter.frequency.setValueAtTime(2600, now);
+                    const cGain = ctx.createGain();
+                    cGain.gain.setValueAtTime(0.9, now);
+                    cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    nCrack.connect(hpFilter);
+                    hpFilter.connect(cGain);
+                    cGain.connect(out);
+                    nCrack.start(now);
+                    nCrack.stop(now + 0.06);
+
+                    // Camada 2: Detonação do canhão de longo alcance
+                    const osc = ctx.createOscillator();
+                    const oGain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(450, now);
+                    osc.frequency.exponentialRampToValueAtTime(48, now + 0.42);
+                    oGain.gain.setValueAtTime(0.85, now);
+                    oGain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+                    osc.connect(oGain);
+                    oGain.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.43);
+
+                    // Camada 3: Eco e trovão rolando pela ilha
+                    const nTail = ctx.createBufferSource();
+                    nTail.buffer = getNoiseBuffer(ctx);
+                    const tFilter = ctx.createBiquadFilter();
+                    tFilter.type = 'lowpass';
+                    tFilter.frequency.setValueAtTime(360, now);
+                    tFilter.frequency.exponentialRampToValueAtTime(80, now + 0.75);
+                    const tGain = ctx.createGain();
+                    tGain.gain.setValueAtTime(0.65, now + 0.02);
+                    tGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                    nTail.connect(tFilter);
+                    tFilter.connect(tGain);
+                    tGain.connect(out);
+                    nTail.start(now);
+                    nTail.stop(now + 0.82);
+
+                } else if (type === 'shot_rpg') {
+                    // Propulsão do foguete (apito dinâmico + jatos de queima)
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(300, now);
+                    filter.frequency.linearRampToValueAtTime(1100, now + 0.35);
+                    const nGain = ctx.createGain();
+                    nGain.gain.setValueAtTime(0.75, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    nSrc.connect(filter);
+                    filter.connect(nGain);
+                    nGain.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.36);
+
+                    const osc = ctx.createOscillator();
+                    const oGain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.linearRampToValueAtTime(290, now + 0.32);
+                    oGain.gain.setValueAtTime(0.6, now);
+                    oGain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+                    osc.connect(oGain);
+                    oGain.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.33);
+
+                } else if (type === 'explosion') {
+                    // 1. Estalo inicial de onda de choque
+                    const nCrack = ctx.createBufferSource();
+                    nCrack.buffer = getNoiseBuffer(ctx);
+                    const cFilter = ctx.createBiquadFilter();
+                    cFilter.type = 'highpass';
+                    cFilter.frequency.setValueAtTime(1800, now);
+                    const cGain = ctx.createGain();
+                    cGain.gain.setValueAtTime(0.95, now);
+                    cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                    nCrack.connect(cFilter);
+                    cFilter.connect(cGain);
+                    cGain.connect(out);
+                    nCrack.start(now);
+                    nCrack.stop(now + 0.07);
+
+                    // 2. Subwoofer massivo (terremoto de sub-graves)
+                    const osc = ctx.createOscillator();
+                    const oGain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(95, now);
+                    osc.frequency.exponentialRampToValueAtTime(22, now + 0.95);
+                    oGain.gain.setValueAtTime(1.0, now);
+                    oGain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+                    osc.connect(oGain);
+                    oGain.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.96);
+
+                    // 3. Rugido da bola de fogo e detritos
+                    const nDebris = ctx.createBufferSource();
+                    nDebris.buffer = getNoiseBuffer(ctx);
+                    const dFilter = ctx.createBiquadFilter();
+                    dFilter.type = 'lowpass';
+                    dFilter.frequency.setValueAtTime(550, now);
+                    dFilter.frequency.exponentialRampToValueAtTime(45, now + 1.25);
+                    const dGain = ctx.createGain();
+                    dGain.gain.setValueAtTime(0.85, now + 0.02);
+                    dGain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+                    nDebris.connect(dFilter);
+                    dFilter.connect(dGain);
+                    dGain.connect(out);
+                    nDebris.start(now);
+                    nDebris.stop(now + 1.32);
+
+                } else if (type === 'hit_shield') {
+                    // Impacto em Escudo (energia cristalina ressonante)
+                    const osc1 = ctx.createOscillator();
+                    const osc2 = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc1.type = 'sine';
+                    osc2.type = 'triangle';
+                    osc1.frequency.setValueAtTime(1100, now);
+                    osc1.frequency.exponentialRampToValueAtTime(2000, now + 0.09);
+                    osc2.frequency.setValueAtTime(1600, now);
+                    osc2.frequency.exponentialRampToValueAtTime(2600, now + 0.09);
+                    g.gain.setValueAtTime(0.5, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc1.connect(g);
+                    osc2.connect(g);
+                    g.connect(out);
+                    osc1.start(now);
+                    osc2.start(now);
+                    osc1.stop(now + 0.1);
+                    osc2.stop(now + 0.1);
+
+                } else if (type === 'hit_body') {
+                    // Hitmarker táctil crocante (estilo Call of Duty / Apex)
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const f = ctx.createBiquadFilter();
+                    f.type = 'bandpass';
+                    f.frequency.setValueAtTime(2500, now);
+                    const g = ctx.createGain();
+                    g.gain.setValueAtTime(0.7, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    nSrc.connect(f);
+                    f.connect(g);
+                    g.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.06);
+
+                    const osc = ctx.createOscillator();
+                    const oG = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(190, now);
+                    osc.frequency.exponentialRampToValueAtTime(75, now + 0.07);
+                    oG.gain.setValueAtTime(0.4, now);
+                    oG.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+                    osc.connect(oG);
+                    oG.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+
+                } else if (type === 'footstep' || type === 'footstep_sprint') {
+                    // Passo suave e tátil de bota no solo
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const f = ctx.createBiquadFilter();
+                    f.type = 'lowpass';
+                    f.frequency.setValueAtTime(220 + Math.random() * 50, now);
+                    const g = ctx.createGain();
+                    const vol = (type === 'footstep_sprint') ? 0.32 : 0.20;
+                    g.gain.setValueAtTime(vol, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+                    nSrc.connect(f);
+                    f.connect(g);
+                    g.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.07);
+
+                } else if (type === 'drink_shield') {
+                    // Efeito revigorante de poção mágica
+                    for (let i = 0; i < 3; i++) {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        const t = now + i * 0.09;
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(330 + i * 90, t);
+                        o.frequency.exponentialRampToValueAtTime(620 + i * 110, t + 0.08);
+                        g.gain.setValueAtTime(0.35, t);
+                        g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+                        o.connect(g);
+                        g.connect(out);
+                        o.start(t);
+                        o.stop(t + 0.09);
                     }
+
+                } else if (type === 'build') {
+                    // Som crocante de madeira se encaixando
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const f = ctx.createBiquadFilter();
+                    f.type = 'bandpass';
+                    f.frequency.setValueAtTime(700, now);
+                    const g = ctx.createGain();
+                    g.gain.setValueAtTime(0.55, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    nSrc.connect(f);
+                    f.connect(g);
+                    g.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.09);
+
+                } else if (type === 'grenade_pin') {
+                    // Saque metálico do pino da granada
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1900, now);
+                    osc.frequency.exponentialRampToValueAtTime(500, now + 0.09);
+                    g.gain.setValueAtTime(0.35, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc.connect(g);
+                    g.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.09);
+
+                } else if (type === 'grenade_flash_pop') {
+                    // Estalo ofuscante de flashbang
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(2500, now);
+                    osc.frequency.exponentialRampToValueAtTime(280, now + 0.16);
+                    g.gain.setValueAtTime(0.75, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                    osc.connect(g);
+                    g.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.16);
+
+                } else if (type === 'grenade_smoke_hiss') {
+                    // Silvo pressurizado contínuo de fumaça
                     const nSource = ctx.createBufferSource();
-                    nSource.buffer = buf;
+                    nSource.buffer = getNoiseBuffer(ctx);
                     const f = ctx.createBiquadFilter();
                     f.type = 'bandpass';
                     f.frequency.setValueAtTime(1150, now);
                     f.Q.setValueAtTime(1.1, now);
                     const hGain = ctx.createGain();
                     hGain.gain.setValueAtTime(0.45, now);
-                    hGain.gain.exponentialRampToValueAtTime(0.01, now + 1.4);
+                    hGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
                     nSource.connect(f);
                     f.connect(hGain);
-                    hGain.connect(ctx.destination);
+                    hGain.connect(out);
                     nSource.start(now);
                     nSource.stop(now + 1.5);
-                } catch(e) {}
-            } else if (type === 'victory') {
-                [440, 554, 659, 880].forEach((freq, idx) => {
-                    const o = ctx.createOscillator();
-                    const g = ctx.createGain();
-                    o.connect(g);
-                    g.connect(ctx.destination);
-                    const t = now + idx * 0.14;
-                    o.type = 'triangle';
-                    o.frequency.setValueAtTime(freq, t);
-                    g.gain.setValueAtTime(0.4, t);
-                    g.gain.exponentialRampToValueAtTime(0.01, t + 0.45);
-                    o.start(t);
-                    o.stop(t + 0.45);
-                });
-            }
+
+                } else if (type === 'victory') {
+                    // Acorde triunfal
+                    [440, 554, 659, 880].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.connect(g);
+                        g.connect(out);
+                        const t = now + idx * 0.14;
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(freq, t);
+                        g.gain.setValueAtTime(0.4, t);
+                        g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+                        o.start(t);
+                        o.stop(t + 0.45);
+                    });
+                }
             } catch(e) {}
         }
 
@@ -3547,7 +3830,7 @@
             }
             lastExplosionPos = { x, y, z, time: now };
 
-            playSound('explosion');
+            playSound('explosion', { x, y, z });
 
             // Aciona o clarão dinâmico na PointLight pré-alocada (sem quebrar shaders)
             if (explosionLight) {
@@ -3889,7 +4172,7 @@
 
                 if (data.type === 'build_placed') {
                     spawnBuildMesh(data.build);
-                    playSound('build');
+                    playSound('build', { x: data.build.x, y: data.build.y, z: data.build.z });
                 }
 
                 if (data.type === 'player_left') {
@@ -4195,7 +4478,7 @@
         }
 
         function triggerFlashbang(x, y, z) {
-            playSound('grenade_flash_pop');
+            playSound('grenade_flash_pop', { x, y, z });
             if (!localPlayer || !localStats.isAlive) return;
 
             const myPos = localPlayer.position;
@@ -4230,7 +4513,7 @@
         }
 
         function spawnSmokeCloud(x, y, z, duration = 15) {
-            playSound('grenade_smoke_hiss');
+            playSound('grenade_smoke_hiss', { x, y, z });
             const group = new THREE.Group();
             group.position.set(x, y + 0.6, z);
 
@@ -4575,7 +4858,7 @@
         }
 
         function handleRemoteFire(data) {
-            playSound(data.weapon === 'shotgun' ? 'shot_shotgun' : (data.weapon === 'sniper' ? 'shot_sniper' : (data.weapon === 'rpg' ? 'shot_rpg' : 'shot_scar')));
+            playSound(data.weapon === 'shotgun' ? 'shot_shotgun' : (data.weapon === 'sniper' ? 'shot_sniper' : (data.weapon === 'rpg' ? 'shot_rpg' : 'shot_scar')), data.origin);
             const start = new THREE.Vector3().copy(data.origin);
             const target = new THREE.Vector3().copy(data.target);
             const color = data.weapon === 'sniper' ? 0x38bdf8 : (data.weapon === 'shotgun' ? 0xf97316 : 0xfacc15);
@@ -4628,6 +4911,7 @@
         let isGliding = false; // COMEÇA DIRETO DO CHÃO!
         let isGrounded = true;
         let playerVelY = 0;
+        let footstepTimer = 0;
         const keys = {};
 
         // ==========================================
@@ -5951,9 +6235,17 @@
                         const legAngle = Math.sin(now * animSpeed) * (isSprinting ? 0.75 : 0.6);
                         localPlayer.userData.leftLeg.rotation.x = legAngle;
                         localPlayer.userData.rightLeg.rotation.x = -legAngle;
+
+                        // Passos acústicos táteis no terreno
+                        footstepTimer += dt * (isSprinting ? 4.8 : 3.0);
+                        if (footstepTimer >= 1.0) {
+                            footstepTimer = 0;
+                            playSound(isSprinting ? 'footstep_sprint' : 'footstep');
+                        }
                     } else {
                         localPlayer.userData.leftLeg.rotation.x = 0;
                         localPlayer.userData.rightLeg.rotation.x = 0;
+                        footstepTimer = 0.85; // Pronto para emitir som logo ao dar o primeiro passo
                     }
 
                     // ==========================================
@@ -6150,6 +6442,9 @@
                     }
                 });
             }
+
+            // Atualiza posição e orientação do ouvinte no áudio 3D (Spatial Audio Listener)
+            updateAudioListener();
 
             renderer.render(scene, camera);
         }

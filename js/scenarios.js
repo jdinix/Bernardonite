@@ -618,8 +618,12 @@
             if (document.hidden) return;
             try {
                 if (!this.audioCtx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    if (AudioContext) this.audioCtx = new AudioContext();
+                    if (window.getSharedAudioContext) {
+                        this.audioCtx = window.getSharedAudioContext();
+                    } else {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContext) this.audioCtx = new AudioContext();
+                    }
                 }
                 if (!this.audioCtx || this.audioCtx.state === 'suspended') return;
 

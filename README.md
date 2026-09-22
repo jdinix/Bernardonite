@@ -61,6 +61,16 @@
 - **Anti-Freeze por Alternância de Abas**: Sincronização inteligente com `visibilitychange` e `window.blur` para limpar teclas presas, pausar osciladores de áudio e recalcular `deltaTime` sem saltos bruscos.
 - **Safe Storage Wrapper**: Armazenamento local seguro que impede erros de *Tracking Prevention* em navegadores modernos (Safari/Edge/Brave).
 
+### 7. 🎧 Áudio Espacial 3D Binaural (HRTF) & Síntese Sonora Multi-Camada
+- **Panning 3D Realista (HRTF)**: O som de tiros de outros jogadores, bots, explosões e construções agora é posicionado no espaço 3D relativo à câmera (percepção exata de esquerda, direita, frente ou longe em fones de ouvido).
+- **Síntese de Alta Fidelidade (Ruído Branco + Filtros Biquad)**:
+  - **SCAR**: Estampido seco de queima de pólvora com punch mecânico de câmara.
+  - **Shotgun Calibre 12**: Estouro encorpado de chumbo com sub-grave de curto alcance.
+  - **Heavy Sniper**: Chicote supersônico cortante de alta frequência com trovão rolante que ecoa pela ilha.
+  - **Explosões**: Onda de choque estridente combinada com subwoofer sísmico e rugido prolongado de detritos.
+  - **Hitmarkers**: Som táctil e crocante de confirmação de acerto no corpo ou escudo.
+  - **Passos**: Feedback tátil de passos de botas sincronizado com caminhada e corrida turbo.
+
 ---
 
 ## 🎮 Tabela de Controles Completa
