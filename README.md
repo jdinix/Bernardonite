@@ -73,6 +73,11 @@
   - **Hitmarkers**: Som táctil e crocante de confirmação de acerto no corpo ou escudo.
   - **Passos**: Feedback tátil de passos de botas sincronizado com caminhada e corrida turbo.
 
+### 8. 📐 Interface Adaptativa: Auto-Escala & Modo HUD Limpo (Tecla H)
+- **Auto-Escala Inteligente**: Em notebooks e telas menores (resolução 1366x768 ou 1080p escalonado), a interface inteira encolhe proporcionalmente de 20% a 32%, liberando mais de 60% do campo de visão central.
+- **Modo HUD Limpo / Compacto (<kbd>H</kbd>)**: Oculta botões auxiliares que poluem a visão de combate (como botões de câmera, corrida rápida e menu de construção) e condensa as barras de vida/escudo e os slots de armas em ícones elegantes.
+- **Seletor de Tamanho no Lobby**: Permite escolher entre `Compacto (-25%)`, `Auto (Ideal)` ou `Normal / Grande`, com persistência automática no armazenamento seguro do navegador.
+
 ---
 
 ## 🎮 Tabela de Controles Completa
@@ -111,6 +116,7 @@
 | <kbd>Shift</kbd> | Correr rápido (**Sprint Turbo +63%**) |
 | <kbd>Espaço</kbd> | Pular / Subir (Modo Espectador) |
 | <kbd>V</kbd> | Alternar entre 1ª Pessoa (FPS) e 3ª Pessoa (TPS) |
+| <kbd>H</kbd> | Alternar Modo HUD Limpo / Completo (ideal para telas menores) |
 | <kbd>1</kbd> a <kbd>9</kbd> | Selecionar arma / granada nos 9 slots |
 | <kbd>G</kbd> | Arremessar granada ativa rapidamente |
 | <kbd>Z</kbd> / <kbd>X</kbd> / <kbd>C</kbd> | Construir Parede / Rampa / Chão |

@@ -1627,6 +1627,202 @@
                 padding: 18px 14px;
             }
         }
+
+        /* ==========================================
+           MODO HUD COMPACTO & SELETOR DE ESCALA RESPONSIVO
+           ========================================== */
+        .btn-hud-action {
+            cursor: pointer;
+            background: rgba(30, 41, 59, 0.85) !important;
+            border-color: #64748b !important;
+            color: #cbd5e1 !important;
+            transition: all 0.15s ease;
+        }
+        .btn-hud-action:hover {
+            transform: scale(1.05);
+            border-color: #38bdf8 !important;
+            color: #38bdf8 !important;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+        }
+        body.hud-compact .btn-hud-action {
+            background: rgba(14, 165, 233, 0.25) !important;
+            border-color: #38bdf8 !important;
+            color: #7dd3fc !important;
+        }
+
+        .hud-size-picker {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .hud-size-btn {
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid #334155;
+            color: #94a3b8;
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 7px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+        .hud-size-btn:hover {
+            border-color: #38bdf8;
+            color: #f8fafc;
+            transform: translateY(-2px);
+        }
+        .hud-size-btn.active {
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.35), rgba(56, 189, 248, 0.45));
+            border-color: #38bdf8;
+            color: #38bdf8;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+        }
+
+        /* AUTO-SCALE RESPONSIVO PARA NOTEBOOKS E RESOLUÇÕES MENORES */
+        @media (max-width: 1400px), (max-height: 860px) {
+            body:not(.hud-scale-normal) .weapon-hud {
+                transform: scale(0.80);
+                transform-origin: bottom right;
+                bottom: 14px;
+                right: 14px;
+            }
+            body:not(.hud-scale-normal) .player-status {
+                transform: scale(0.80);
+                transform-origin: bottom left;
+                bottom: 14px;
+                left: 14px;
+            }
+            body:not(.hud-scale-normal) .top-hud {
+                transform: scale(0.82);
+                transform-origin: top right;
+                top: 10px;
+                right: 14px;
+                gap: 6px;
+            }
+            body:not(.hud-scale-normal) .top-left-hud {
+                transform: scale(0.82);
+                transform-origin: top left;
+                top: 10px;
+                left: 14px;
+                gap: 6px;
+            }
+            body:not(.hud-scale-normal) .team-scoreboard-container {
+                transform: translateX(-50%) scale(0.84);
+                top: 8px;
+            }
+        }
+
+        @media (max-width: 1180px), (max-height: 720px) {
+            body:not(.hud-scale-normal) .weapon-hud {
+                transform: scale(0.68) !important;
+                bottom: 10px !important;
+                right: 10px !important;
+            }
+            body:not(.hud-scale-normal) .player-status {
+                transform: scale(0.70) !important;
+                bottom: 10px !important;
+                left: 10px !important;
+            }
+            body:not(.hud-scale-normal) .top-hud {
+                transform: scale(0.72) !important;
+                top: 8px !important;
+                right: 10px !important;
+                gap: 4px !important;
+            }
+            body:not(.hud-scale-normal) .top-left-hud {
+                transform: scale(0.72) !important;
+                top: 8px !important;
+                left: 10px !important;
+                gap: 4px !important;
+            }
+            body:not(.hud-scale-normal) .team-scoreboard-container {
+                transform: translateX(-50%) scale(0.75) !important;
+                top: 6px !important;
+            }
+        }
+
+        /* ESCALA MANUAL ESCOLHIDA PELO USUÁRIO (COMPACTA) */
+        body.hud-scale-compact .weapon-hud {
+            transform: scale(0.72) !important;
+            transform-origin: bottom right !important;
+            bottom: 12px !important;
+            right: 12px !important;
+        }
+        body.hud-scale-compact .player-status {
+            transform: scale(0.74) !important;
+            transform-origin: bottom left !important;
+            bottom: 12px !important;
+            left: 12px !important;
+        }
+        body.hud-scale-compact .top-hud {
+            transform: scale(0.78) !important;
+            transform-origin: top right !important;
+            top: 10px !important;
+            right: 12px !important;
+            gap: 6px !important;
+        }
+        body.hud-scale-compact .top-left-hud {
+            transform: scale(0.78) !important;
+            transform-origin: top left !important;
+            top: 10px !important;
+            left: 12px !important;
+            gap: 6px !important;
+        }
+        body.hud-scale-compact .team-scoreboard-container {
+            transform: translateX(-50%) scale(0.80) !important;
+            top: 6px !important;
+        }
+
+        /* MODO HUD COMPACTO / LIMPO (.hud-compact) */
+        body.hud-compact .quick-action-bar {
+            display: none !important;
+        }
+        body.hud-compact .build-menu {
+            display: none !important;
+        }
+        body.hud-compact .slot {
+            width: 52px !important;
+            height: 52px !important;
+            border-radius: 10px !important;
+            font-size: 16px !important;
+        }
+        body.hud-compact .slot .slot-title {
+            display: none !important;
+        }
+        body.hud-compact .slot .slot-dmg {
+            font-size: 9px !important;
+            bottom: 2px !important;
+        }
+        body.hud-compact .slot .slot-key {
+            font-size: 9px !important;
+            top: 2px !important;
+            left: 4px !important;
+        }
+        body.hud-compact .player-status .bar-container {
+            width: 180px !important;
+            padding: 3px 8px 5px 8px !important;
+            border-radius: 10px !important;
+        }
+        body.hud-compact .player-status .bar-bg {
+            height: 7px !important;
+        }
+        body.hud-compact .player-status .wood-count {
+            padding: 3px 10px !important;
+            font-size: 11px !important;
+        }
+        body.hud-compact .player-status .team-pill-hud {
+            padding: 2px 8px !important;
+            font-size: 10px !important;
+        }
+        body.hud-compact .top-hud .stat-badge {
+            padding: 5px 10px !important;
+            font-size: 12px !important;
+        }
     </style>
 </head>
 <body class="in-lobby">
@@ -1672,13 +1868,16 @@
         <div class="target-subtext">META DA RODADA: 25 ELIMINAÇÕES</div>
     </div>
 
-    <!-- HUD SUPERIOR ESQUERDO (AÇÕES: SAIR & RENASCER) -->
+    <!-- HUD SUPERIOR ESQUERDO (AÇÕES: SAIR, RENASCER & MODO HUD) -->
     <div class="top-left-hud">
         <button id="btn-top-leave" class="stat-badge btn-leave-action" title="Sair da partida e voltar ao Lobby (Esc)">
             <i data-lucide="log-out"></i> SAIR
         </button>
         <button id="btn-top-respawn" class="stat-badge btn-respawn-action" title="Renascer seu personagem no chão da base do seu time (R)">
             <i data-lucide="rotate-ccw"></i> RENASCER (SOLO)
+        </button>
+        <button id="btn-top-hud-toggle" class="stat-badge btn-hud-action" title="Alternar Interface Limpa / Completa (Tecla H)">
+            <i data-lucide="layout"></i> <span id="hud-toggle-label">HUD: NORMAL (H)</span>
         </button>
     </div>
 
@@ -2051,6 +2250,22 @@
                         <div class="skin-opt" style="background: #0d9488;" data-color="#0d9488"></div>
                         <div class="skin-opt" style="background: #4f46e5;" data-color="#4f46e5"></div>
                         <div class="skin-opt" style="background: #eab308;" data-color="#eab308"></div>
+                    </div>
+                </div>
+
+                <!-- Seletor de Tamanho do HUD (Telas Menores / Notebooks) -->
+                <div class="input-group" style="text-align: center; margin-top: 14px;">
+                    <label style="text-align: center; margin-bottom: 6px;"><i data-lucide="monitor"></i> Tamanho da Interface (HUD na Tela):</label>
+                    <div class="hud-size-picker" id="hud-size-picker">
+                        <button type="button" class="hud-size-btn" data-scale="compact" title="Reduz a interface para caber confortavelmente em notebooks e telas menores">
+                            <i data-lucide="minimize-2"></i> Compacto (-25%)
+                        </button>
+                        <button type="button" class="hud-size-btn active" data-scale="auto" title="Ajuste automático inteligente para a resolução do seu monitor">
+                            <i data-lucide="sparkles"></i> Auto (Ideal)
+                        </button>
+                        <button type="button" class="hud-size-btn" data-scale="normal" title="Tamanho padrão completo de desktop">
+                            <i data-lucide="maximize-2"></i> Normal
+                        </button>
                     </div>
                 </div>
 
@@ -5241,6 +5456,79 @@
         }
         updateSkinsForTeam(myTeam, mySkin);
 
+        // ==========================================
+        // SISTEMA DE ESCALA E MODO COMPACTO DO HUD (PARA TELAS MENORES & NOTEBOOKS)
+        // ==========================================
+        let isHudCompact = false;
+        let hudScaleSetting = 'auto'; // 'compact', 'auto', 'normal'
+
+        function initHudPreferences() {
+            const savedScale = safeStorage.getItem('bernardonite_hud_scale');
+            if (savedScale && ['compact', 'auto', 'normal'].includes(savedScale)) {
+                hudScaleSetting = savedScale;
+            }
+            const savedCompact = safeStorage.getItem('bernardonite_hud_compact');
+            if (savedCompact === 'true') {
+                isHudCompact = true;
+            }
+            applyHudSettings();
+
+            // Configurar botões de escala do Lobby
+            document.querySelectorAll('#hud-size-picker .hud-size-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    setHudScale(btn.getAttribute('data-scale'));
+                });
+            });
+
+            // Botão in-game de alternar HUD
+            const btnToggleHud = document.getElementById('btn-top-hud-toggle');
+            if (btnToggleHud) {
+                btnToggleHud.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleHudCompactMode();
+                });
+            }
+        }
+
+        function applyHudSettings() {
+            document.body.classList.remove('hud-scale-compact', 'hud-scale-auto', 'hud-scale-normal');
+            document.body.classList.add(`hud-scale-${hudScaleSetting}`);
+
+            document.querySelectorAll('#hud-size-picker .hud-size-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-scale') === hudScaleSetting);
+            });
+
+            document.body.classList.toggle('hud-compact', isHudCompact);
+
+            const lbl = document.getElementById('hud-toggle-label');
+            if (lbl) {
+                lbl.textContent = isHudCompact ? 'HUD: LIMPO (H)' : 'HUD: NORMAL (H)';
+            }
+            refreshIcons();
+        }
+
+        function toggleHudCompactMode() {
+            isHudCompact = !isHudCompact;
+            safeStorage.setItem('bernardonite_hud_compact', isHudCompact ? 'true' : 'false');
+            applyHudSettings();
+            if (isHudCompact) {
+                showToast('<i data-lucide="layout-grid" style="color: #38bdf8;"></i> <b>Modo HUD Limpo Ativado (H):</b> Botões secundários recolhidos para liberar a tela!');
+            } else {
+                showToast('<i data-lucide="layout" style="color: #facc15;"></i> <b>Modo HUD Completo Ativado (H):</b> Todos os botões e ferramentas visíveis.');
+            }
+        }
+
+        function setHudScale(scale) {
+            hudScaleSetting = scale;
+            safeStorage.setItem('bernardonite_hud_scale', scale);
+            applyHudSettings();
+            const names = { compact: 'Compacto (-25%)', auto: 'Automático (Ideal)', normal: 'Normal / Grande' };
+            showToast(`<i data-lucide="monitor" style="color: #38bdf8;"></i> Tamanho do HUD definido para: <b>${names[scale] || scale}</b>`);
+        }
+
+        initHudPreferences();
+
         // Controle de Quantidade de Bots
         let selectedBotCount = 6;
         function updateBotCountUI(count) {
@@ -6040,6 +6328,10 @@
             }
             if (e.code === 'KeyV') {
                 toggleCameraView();
+                return;
+            }
+            if (e.code === 'KeyH' && !e.repeat) {
+                toggleHudCompactMode();
                 return;
             }
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
