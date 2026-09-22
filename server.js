@@ -451,7 +451,8 @@ class GameRoom {
                         kills: botPlayer.kills,
                         deaths: botPlayer.deaths,
                         isGliding: botPlayer.isGliding,
-                        isAlive: botPlayer.isAlive
+                        isAlive: botPlayer.isAlive,
+                        isBot: true
                     },
                     aliveCount: this.getAliveCount(),
                     teamScores: this.teamScores
@@ -596,6 +597,7 @@ class GameRoom {
                             victimId: p.id,
                             victimName: p.name,
                             victimTeam: p.team,
+                            victimIsBot: !!p.isBot,
                             killerId: 'GAS_TOXICO',
                             killerName: 'Gás Tóxico',
                             killerTeam: 'gas',
@@ -768,6 +770,7 @@ class GameRoom {
                                 victimId: target.id,
                                 victimName: target.name,
                                 victimTeam: target.team,
+                                victimIsBot: !!target.isBot,
                                 killerId: bot.id,
                                 killerName: bot.name,
                                 killerTeam: bot.team,
@@ -919,6 +922,7 @@ class GameRoom {
                             victimId: target.id,
                             victimName: target.name,
                             victimTeam: target.team,
+                            victimIsBot: !!target.isBot,
                             killerId: sender.id,
                             killerName: sender.name,
                             killerTeam: sender.team,
@@ -1209,7 +1213,8 @@ wss.on('connection', (ws) => {
                         kills: myPlayer.kills,
                         deaths: myPlayer.deaths,
                         isGliding: myPlayer.isGliding,
-                        isAlive: myPlayer.isAlive
+                        isAlive: myPlayer.isAlive,
+                        isBot: false
                     },
                     aliveCount: room.getAliveCount(),
                     teamScores: room.teamScores
@@ -1349,6 +1354,7 @@ wss.on('connection', (ws) => {
                         victimId: myPlayer.id,
                         victimName: myPlayer.name,
                         victimTeam: myPlayer.team,
+                        victimIsBot: !!myPlayer.isBot,
                         killerId: 'RADIAÇÃO',
                         killerName: 'Poça Radioativa',
                         killerTeam: 'chernobyl',
@@ -1420,6 +1426,7 @@ wss.on('connection', (ws) => {
                         victimId: target.id,
                         victimName: target.name,
                         victimTeam: target.team,
+                        victimIsBot: !!target.isBot,
                         killerId: myPlayer.id,
                         killerName: myPlayer.name,
                         killerTeam: myPlayer.team,

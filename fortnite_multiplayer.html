@@ -2643,6 +2643,141 @@
                     nSource.start(now);
                     nSource.stop(now + 1.5);
 
+                } else if (type === 'pickaxe_swing') {
+                    // Whoosh cortante de ar tático da picareta
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const f = ctx.createBiquadFilter();
+                    f.type = 'bandpass';
+                    f.frequency.setValueAtTime(620, now);
+                    f.frequency.exponentialRampToValueAtTime(190, now + 0.12);
+                    f.Q.setValueAtTime(2.2, now);
+                    const g = ctx.createGain();
+                    g.gain.setValueAtTime(0.55, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    nSrc.connect(f);
+                    f.connect(g);
+                    g.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.13);
+
+                    const osc = ctx.createOscillator();
+                    const og = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(210, now);
+                    osc.frequency.exponentialRampToValueAtTime(75, now + 0.11);
+                    og.gain.setValueAtTime(0.3, now);
+                    og.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                    osc.connect(og);
+                    og.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+
+                } else if (type === 'pickaxe_hit') {
+                    // Pancada sólida e impacto cortante de aço contra árvore/pedra/carne
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const f = ctx.createBiquadFilter();
+                    f.type = 'bandpass';
+                    f.frequency.setValueAtTime(880, now);
+                    f.frequency.exponentialRampToValueAtTime(280, now + 0.09);
+                    const g = ctx.createGain();
+                    g.gain.setValueAtTime(0.8, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    nSrc.connect(f);
+                    f.connect(g);
+                    g.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.10);
+
+                    // Ressonância metálica do ferro da lâmina
+                    const osc = ctx.createOscillator();
+                    const og = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(360, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.13);
+                    og.gain.setValueAtTime(0.55, now);
+                    og.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+                    osc.connect(og);
+                    og.connect(out);
+                    osc.start(now);
+                    osc.stop(now + 0.14);
+
+                } else if (type === 'human_join') {
+                    // Chime tecnológico ascendente de entrada de Player Humano
+                    const freqs = [587.33, 739.99, 880.00, 1174.66]; // D5, F#5, A5, D6
+                    freqs.forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        const t = now + idx * 0.08;
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, t);
+                        g.gain.setValueAtTime(0.35, t);
+                        g.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+                        o.connect(g);
+                        g.connect(out);
+                        o.start(t);
+                        o.stop(t + 0.40);
+                    });
+                    // Beep de rádio militar tático
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const bf = ctx.createBiquadFilter();
+                    bf.type = 'bandpass';
+                    bf.frequency.setValueAtTime(2200, now);
+                    const bg = ctx.createGain();
+                    bg.gain.setValueAtTime(0.3, now);
+                    bg.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                    nSrc.connect(bf);
+                    bf.connect(bg);
+                    bg.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.07);
+
+                } else if (type === 'human_death') {
+                    // Sino dramático de eliminação de Jogador Humano / Flatline tático
+                    const osc1 = ctx.createOscillator();
+                    const osc2 = ctx.createOscillator();
+                    const g1 = ctx.createGain();
+                    const g2 = ctx.createGain();
+
+                    // Tom fúnebre ressonante descendente
+                    osc1.type = 'sawtooth';
+                    osc1.frequency.setValueAtTime(196, now); // Sol3 (G3)
+                    osc1.frequency.exponentialRampToValueAtTime(58, now + 0.85);
+                    g1.gain.setValueAtTime(0.7, now);
+                    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+                    osc1.connect(g1);
+                    g1.connect(out);
+                    osc1.start(now);
+                    osc1.stop(now + 0.92);
+
+                    // Sub-grave sombrio (queda cardíaca de combate)
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(105, now);
+                    osc2.frequency.exponentialRampToValueAtTime(26, now + 0.95);
+                    g2.gain.setValueAtTime(0.85, now);
+                    g2.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+                    osc2.connect(g2);
+                    g2.connect(out);
+                    osc2.start(now);
+                    osc2.stop(now + 1.02);
+
+                    // Estática tática de perda de sinal
+                    const nSrc = ctx.createBufferSource();
+                    nSrc.buffer = getNoiseBuffer(ctx);
+                    const f = ctx.createBiquadFilter();
+                    f.type = 'bandpass';
+                    f.frequency.setValueAtTime(800, now);
+                    const ng = ctx.createGain();
+                    ng.gain.setValueAtTime(0.4, now);
+                    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    nSrc.connect(f);
+                    f.connect(ng);
+                    ng.connect(out);
+                    nSrc.start(now);
+                    nSrc.stop(now + 0.16);
+
                 } else if (type === 'victory') {
                     // Acorde triunfal
                     [440, 554, 659, 880].forEach((freq, idx) => {
@@ -4023,7 +4158,13 @@
                 if (data.type === 'player_joined') {
                     if (data.player.id !== myId) {
                         spawnRemotePlayer(data.player);
-                        showToast(`<i data-lucide="user-plus"></i> ${data.player.name} entrou no Time [${data.player.team.toUpperCase()}]!`);
+                        const isHuman = (data.player.isBot === false) || (!data.player.id.startsWith('bot_'));
+                        if (isHuman) {
+                            playSound('human_join');
+                            showToast(`<i data-lucide="user-check" style="color: #38bdf8;"></i> <b>PLAYER HUMANO ENTROU:</b> ${data.player.name} no Time [${data.player.team.toUpperCase()}]!`);
+                        } else {
+                            showToast(`<i data-lucide="bot"></i> ${data.player.name} entrou no Time [${data.player.team.toUpperCase()}]!`);
+                        }
                     }
                     if (data.aliveCount !== undefined) updateAliveCount(data.aliveCount);
                     if (data.teamScores) updateTeamScores(data.teamScores);
@@ -4077,6 +4218,11 @@
                 }
 
                 if (data.type === 'player_eliminated') {
+                    const isHumanVictim = (data.victimId === myId) || (data.victimIsBot === false) || (data.victimId && !data.victimId.startsWith('bot_'));
+                    if (isHumanVictim) {
+                        playSound('human_death');
+                    }
+
                     if (data.killerId === 'GAS_TOXICO' || data.killerTeam === 'gas' || data.weapon === 'gas') {
                         addKillFeed(`${data.victimName} sucumbiu ao Gás Tóxico <i data-lucide="biohazard"></i>`);
                     } else {
@@ -4565,10 +4711,19 @@
             // SLOT 1: PICARETA TÁTICA (DANO 25)
             // ------------------------------------
             if (slot === 1) {
-                playSound('shot_scar');
+                playSound('pickaxe_swing');
                 if (fpsViewModel && cameraMode === 'first') {
                     fpsWeaponMount.rotation.x = -0.55;
                     setTimeout(() => { if (fpsWeaponMount) fpsWeaponMount.rotation.x = 0; }, 120);
+                }
+
+                if (ws && ws.readyState === 1) {
+                    ws.send(JSON.stringify({
+                        type: 'fire',
+                        weapon: 'pickaxe',
+                        origin: { x: localPlayer.position.x, y: localPlayer.position.y + 1.2, z: localPlayer.position.z },
+                        target: { x: localPlayer.position.x, y: localPlayer.position.y + 1.2, z: localPlayer.position.z }
+                    }));
                 }
 
                 // Colheita de madeira
@@ -4578,6 +4733,7 @@
                         updateHUD();
                         showToast(`<i data-lucide="box"></i> +20 Madeira!`);
                         spawnDamageNumber(t.position.x, t.position.y + 2, t.position.z, 25, false);
+                        playSound('pickaxe_hit', t.position);
                     }
                 });
 
@@ -4585,6 +4741,7 @@
                 remotePlayers.forEach((rp, id) => {
                     if (rp.visible && rp.userData.isAlive && rp.userData.team !== myTeam) {
                         if (localPlayer.position.distanceTo(rp.position) < 3.8) {
+                            playSound('pickaxe_hit', rp.position);
                             if (ws && ws.readyState === 1) {
                                 ws.send(JSON.stringify({
                                     type: 'hit',
@@ -4858,11 +5015,17 @@
         }
 
         function handleRemoteFire(data) {
+            if (data.weapon === 'pickaxe') {
+                playSound('pickaxe_swing', data.origin);
+                return;
+            }
             playSound(data.weapon === 'shotgun' ? 'shot_shotgun' : (data.weapon === 'sniper' ? 'shot_sniper' : (data.weapon === 'rpg' ? 'shot_rpg' : 'shot_scar')), data.origin);
-            const start = new THREE.Vector3().copy(data.origin);
-            const target = new THREE.Vector3().copy(data.target);
-            const color = data.weapon === 'sniper' ? 0x38bdf8 : (data.weapon === 'shotgun' ? 0xf97316 : 0xfacc15);
-            spawnTracer(start, target, color, data.weapon === 'sniper' ? 140 : 60);
+            if (data.origin && data.target) {
+                const start = new THREE.Vector3().copy(data.origin);
+                const target = new THREE.Vector3().copy(data.target);
+                const color = data.weapon === 'sniper' ? 0x38bdf8 : (data.weapon === 'shotgun' ? 0xf97316 : 0xfacc15);
+                spawnTracer(start, target, color, data.weapon === 'sniper' ? 140 : 60);
+            }
         }
 
         function spawnTracer(start, target, color = 0xfacc15, durationMs = 60) {

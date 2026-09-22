@@ -63,7 +63,9 @@
 
 ### 7. 🎧 Áudio Espacial 3D Binaural (HRTF) & Síntese Sonora Multi-Camada
 - **Panning 3D Realista (HRTF)**: O som de tiros de outros jogadores, bots, explosões e construções agora é posicionado no espaço 3D relativo à câmera (percepção exata de esquerda, direita, frente ou longe em fones de ouvido).
-- **Síntese de Alta Fidelidade (Ruído Branco + Filtros Biquad)**:
+  - **Picareta Tática**: Whoosh cortante de ar tático ao balançar (*sweep bandpass* 620Hz ➔ 190Hz) e impacto metálico sólido com ressonância de aço ao golpear árvores ou inimigos.
+  - **Entrada de Player Humano**: Chime tecnológico ascendente de 4 notas [D5, F#5, A5, D6] acompanhado de *roger beep* de rádio militar quando um humano entra na partida.
+  - **Eliminação de Player Humano**: Tom fúnebre ressonante descendente com sub-grave de parada cardíaca (26Hz) e estática de perda de sinal militar quando um jogador humano é eliminado.
   - **SCAR**: Estampido seco de queima de pólvora com punch mecânico de câmara.
   - **Shotgun Calibre 12**: Estouro encorpado de chumbo com sub-grave de curto alcance.
   - **Heavy Sniper**: Chicote supersônico cortante de alta frequência com trovão rolante que ecoa pela ilha.
