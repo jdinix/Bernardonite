@@ -106,6 +106,7 @@
 | :--- | :--- |
 | <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> | Movimentar o personagem |
 | <kbd>Mouse</kbd> | Mirar e rotacionar câmera (Pointer Lock) |
+| <kbd>Scroll do Mouse (Wheel)</kbd> | Aproximar (6-) ou distanciar (6+) a câmera do boneco |
 | <kbd>Clique Esquerdo</kbd> | Disparar arma / Usar picareta / Consumir escudo |
 | <kbd>Shift</kbd> | Correr rápido (**Sprint Turbo +63%**) |
 | <kbd>Espaço</kbd> | Pular / Subir (Modo Espectador) |

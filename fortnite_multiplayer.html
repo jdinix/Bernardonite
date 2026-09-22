@@ -3796,6 +3796,11 @@
         let fpsRecoil = 0;
         let isSprinting = false;
 
+        // Zoom Dinâmico da Câmera (Scroll do Mouse: 6+ distanciar / 6- aproximar)
+        let camZoomLevel = 0; // Varia de -6 (aproximação máxima a 1.2m) até +6 (distanciamento máximo a 9.6m)
+        let targetCamDist = 3.6;
+        let currentCamDist = 3.6;
+
         const fpsViewModel = new THREE.Group();
         camera.add(fpsViewModel);
         fpsViewModel.visible = false;
@@ -5827,6 +5832,26 @@
             if (e.button === 0) fireWeapon();
         });
 
+        // ==========================================
+        // SCROLL DO MOUSE (ZOOM DA CÂMERA: 6+ DISTANCIAR / 6- APROXIMAR O BONECO)
+        // ==========================================
+        window.addEventListener('wheel', (e) => {
+            if (!isLocked || !localStats.isAlive || localStats.isSpectating) return;
+
+            // e.deltaY > 0: scroll pra trás / rodar pra baixo -> distanciar boneco (+1 até +6)
+            // e.deltaY < 0: scroll pra frente / rodar pra cima -> aproximar boneco (-1 até -6)
+            if (e.deltaY > 0) {
+                if (cameraMode === 'first') {
+                    toggleCameraView();
+                    camZoomLevel = -6;
+                } else {
+                    camZoomLevel = Math.min(6, camZoomLevel + 1);
+                }
+            } else if (e.deltaY < 0) {
+                camZoomLevel = Math.max(-6, camZoomLevel - 1);
+            }
+        }, { passive: true });
+
         // Alternância do Placar (TAB)
         let isTabOpen = false;
         function toggleLeaderboard(show) {
@@ -6466,9 +6491,18 @@
                             fpsViewModel.visible = false;
                         }
 
-                        const camDist = 3.6;
-                        const camHeight = 1.9;
-                        const shoulderOffset = 0.85;
+                        // Cálculo dinâmico do alvo de zoom (-6 a +6)
+                        if (camZoomLevel >= 0) {
+                            targetCamDist = 3.6 + camZoomLevel * 1.0; // de 3.6m até 9.6m (+6m distanciado)
+                        } else {
+                            targetCamDist = 3.6 + camZoomLevel * 0.4; // de 3.6m até 1.2m (-6 níveis de aproximação)
+                        }
+                        currentCamDist = THREE.MathUtils.lerp(currentCamDist, targetCamDist, Math.min(1.0, dt * 10));
+
+                        const progress = (currentCamDist - 3.6) / 6.0;
+                        const camDist = currentCamDist;
+                        const camHeight = 1.9 + progress * 0.55;
+                        const shoulderOffset = 0.85 + progress * 0.25;
 
                         const camPos = localPlayer.position.clone()
                             .sub(camDir.clone().multiplyScalar(camDist))
